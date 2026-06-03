@@ -41,6 +41,11 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 ./.venv/bin/python tools/market.py quote AIR --market NZX
 ./.venv/bin/python tools/market.py fx NZDUSD
 ./.venv/bin/python tools/ledger.py list --limit 10
+
+# Technical indicators (RSI, MACD, Bollinger, 50/200 MA, stochastic, ATR, volume)
+# with plain-English readings + a confluence tally. Context for timing — not a trigger.
+./.venv/bin/python tools/indicators.py NVDA
+./.venv/bin/python tools/indicators.py USF --market NZX --period 2y
 ```
 
 ## Tests
@@ -51,5 +56,6 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 
 ## Roadmap
 
-- **Phase 2:** technical indicators (RSI/MACD/Bollinger) + richer fundamentals.
+- **Phase 1 ✅** conversation-first analyst: live data, portfolio memory, prediction ledger.
+- **Phase 2 ✅** technical indicators (RSI/MACD/Bollinger/MA/stochastic/ATR/volume) as confluence.
 - **Phase 3:** auto-verify matured predictions + self-calibrating scorecard.
