@@ -6,3 +6,9 @@ venv/
 
 # Local environment
 .env
+
+# Personal data — never commit (this is a public repo)
+data/portfolio.json
+data/profile.md
+data/notebook.md
+data/predictions.jsonl

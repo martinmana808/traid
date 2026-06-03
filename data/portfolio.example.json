@@ -1,0 +1,8 @@
+{
+  "base_currency": "NZD",
+  "cash_available": 0,
+  "risk_tolerance": "conservative-moderate",
+  "holdings": [
+    { "ticker": "VOO", "market": "US", "shares": 0, "avg_cost": 0, "currency": "USD" }
+  ]
+}
