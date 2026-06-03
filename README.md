@@ -11,6 +11,12 @@ suggestions, and logs every call to a self-verifying ledger. Claude is the brain
 ```bash
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
+
+# Your personal data files are gitignored — create them from the examples:
+cp data/portfolio.example.json data/portfolio.json
+cp data/profile.example.md     data/profile.md
+cp data/notebook.example.md    data/notebook.md
+touch data/predictions.jsonl
 ```
 
 ## Use
@@ -21,7 +27,7 @@ Open this project in Claude Code and just talk to it:
 
 The `traid-analyst` skill loads your portfolio, pulls live data, reasons, suggests, and logs.
 
-## Your data (edit freely)
+## Your data (gitignored — local only, never pushed)
 
 - `data/portfolio.json` — holdings, cash, risk tolerance
 - `data/profile.md` — your goals, horizon, constraints

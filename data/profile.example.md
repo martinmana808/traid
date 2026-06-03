@@ -1,6 +1,6 @@
-# Investor Profile — Martin
+# Investor Profile — <your name>
 
-> TRaid reads this every session. Keep it short and current.
+> TRaid reads this every session. Keep it short and current. Copy this to `profile.md` and fill it in.
 
 - **Broker:** Sharesies (New Zealand)
 - **Base currency:** NZD
