@@ -12,3 +12,4 @@ data/portfolio.json
 data/profile.md
 data/notebook.md
 data/predictions.jsonl
+data/*.csv
