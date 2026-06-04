@@ -59,6 +59,22 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 ./.venv/bin/python tools/fundamentals.py NVDA
 ```
 
+## Syncing holdings from Sharesies (read-only, no credentials)
+
+Sharesies has no official API, but you can export your data safely:
+
+1. In Sharesies: **Manage → Download reports → Transaction report (CSV)**, pick the full date range, export.
+2. Save the file into the project (e.g. `data/sharesies.csv` — it's gitignored).
+3. Preview, then write it into your portfolio (with **real cost basis**):
+
+```bash
+./.venv/bin/python tools/import_sharesies.py data/sharesies.csv          # dry run
+./.venv/bin/python tools/import_sharesies.py data/sharesies.csv --write  # update portfolio.json
+```
+
+The parser fuzzy-matches column names; if it can't find one it prints your CSV's
+headers so the mapping can be adjusted. Your cash balance and risk setting are preserved.
+
 ## Tests
 
 ```bash
