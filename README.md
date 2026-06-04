@@ -57,6 +57,28 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 
 # Deep fundamentals: valuation (P/E, forward P/E, PEG), growth, margins, debt, FCF.
 ./.venv/bin/python tools/fundamentals.py NVDA
+
+# Proactive watchdog: checks holdings/predictions and pushes alerts (iPhone + Mac).
+./.venv/bin/python tools/watchdog.py --check --dry-run   # preview, nothing sent
+```
+
+## Proactive Watchdog (Phase 6) — alerts to your iPhone + Mac
+
+Runs on a schedule and pings you about: a holding moving ≥7% in a day, a
+prediction maturing, or your foreign-share cost nearing the NZ$50k FIF line.
+Quiet otherwise; never re-nags.
+
+**One-time Telegram setup (free, private):**
+1. In Telegram, message **@BotFather** → `/newbot` → follow prompts → copy the **bot token**.
+2. `cp .env.example .env` and paste the token into `TELEGRAM_BOT_TOKEN`.
+3. Send your new bot any message in Telegram, then:
+   `./.venv/bin/python tools/watchdog.py --get-chat-id` → paste the number into `TELEGRAM_CHAT_ID`.
+4. Test: `./.venv/bin/python tools/watchdog.py --test` (should buzz your phone + Mac).
+
+**Schedule it (weekdays 9am NZT):**
+```bash
+cp scripts/com.traid.watchdog.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.traid.watchdog.plist
 ```
 
 ## Syncing holdings from Sharesies (read-only, no credentials)
@@ -88,4 +110,4 @@ headers so the mapping can be adjusted. Your cash balance and risk setting are p
 - **Phase 3 ✅** self-verifying scorecard: auto-grades matured calls, calibrates confidence, honest about small samples.
 - **Phase 4 ✅** candlestick pattern recognition (0–100 match scores) + support/resistance/swing structure, as low-weight context.
 - **Phase 5 ✅** deep fundamentals — valuation (P/E, forward P/E, PEG), growth, margins/ROE, debt, free cash flow.
-- **Phase 6:** proactive watchdog — scheduled portfolio check-ins (big moves, overbought/oversold, predictions due).
+- **Phase 6 ✅** proactive watchdog — scheduled alerts to iPhone (Telegram) + Mac for big moves, matured predictions, and the FIF threshold.

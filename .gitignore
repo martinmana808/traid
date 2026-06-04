@@ -13,3 +13,5 @@ data/profile.md
 data/notebook.md
 data/predictions.jsonl
 data/*.csv
+data/watchdog_state.json
+data/*.log
