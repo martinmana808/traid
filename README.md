@@ -54,6 +54,9 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 # Candlestick patterns (0-100 match score) + support/resistance + swing-trend.
 # Low-weight context only — patterns have weak, contested predictive power.
 ./.venv/bin/python tools/patterns.py NVDA
+
+# Deep fundamentals: valuation (P/E, forward P/E, PEG), growth, margins, debt, FCF.
+./.venv/bin/python tools/fundamentals.py NVDA
 ```
 
 ## Tests
@@ -68,5 +71,5 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 - **Phase 2 ✅** technical indicators (RSI/MACD/Bollinger/MA/stochastic/ATR/volume) as confluence.
 - **Phase 3 ✅** self-verifying scorecard: auto-grades matured calls, calibrates confidence, honest about small samples.
 - **Phase 4 ✅** candlestick pattern recognition (0–100 match scores) + support/resistance/swing structure, as low-weight context.
-- **Phase 5:** deep fundamentals — revenue/earnings growth, margins, forward P/E, PEG, debt, free cash flow.
+- **Phase 5 ✅** deep fundamentals — valuation (P/E, forward P/E, PEG), growth, margins/ROE, debt, free cash flow.
 - **Phase 6:** proactive watchdog — scheduled portfolio check-ins (big moves, overbought/oversold, predictions due).
