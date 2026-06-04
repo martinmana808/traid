@@ -46,6 +46,10 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 # with plain-English readings + a confluence tally. Context for timing — not a trigger.
 ./.venv/bin/python tools/indicators.py NVDA
 ./.venv/bin/python tools/indicators.py USF --market NZX --period 2y
+
+# Self-verifying scorecard: grades matured calls, calibrates confidence,
+# shows interim marks for open calls. Honest about small samples.
+./.venv/bin/python tools/scorecard.py --summary
 ```
 
 ## Tests
@@ -58,4 +62,4 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 
 - **Phase 1 ✅** conversation-first analyst: live data, portfolio memory, prediction ledger.
 - **Phase 2 ✅** technical indicators (RSI/MACD/Bollinger/MA/stochastic/ATR/volume) as confluence.
-- **Phase 3:** auto-verify matured predictions + self-calibrating scorecard.
+- **Phase 3 ✅** self-verifying scorecard: auto-grades matured calls, calibrates confidence, honest about small samples.
