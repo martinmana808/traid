@@ -16,8 +16,11 @@ import json
 
 def normalize_ticker(ticker, market=None):
     t = ticker.strip().upper()
-    if market and market.upper() in ("NZX", "NZ") and not t.endswith(".NZ"):
+    m = market.upper() if market else None
+    if m in ("NZX", "NZ") and not t.endswith(".NZ"):
         t = f"{t}.NZ"
+    elif m in ("ASX", "AU") and not t.endswith(".AX"):
+        t = f"{t}.AX"
     return t
 
 

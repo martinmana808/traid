@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  TRaid Watchdog schedule (macOS launchd). Runs weekdays at 9:00am NZT,
+  which catches the prior US session's close.
+
+  Install:
+    cp scripts/com.traid.watchdog.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.traid.watchdog.plist
+  Remove:
+    launchctl unload ~/Library/LaunchAgents/com.traid.watchdog.plist
+
+  Adjust the absolute paths below if your project lives elsewhere.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.traid.watchdog</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/martinmana/Documents/Projects/TRaid/.venv/bin/python</string>
+    <string>/Users/martinmana/Documents/Projects/TRaid/tools/watchdog.py</string>
+    <string>--check</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/martinmana/Documents/Projects/TRaid</string>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
+  <key>StandardOutPath</key>
+  <string>/Users/martinmana/Documents/Projects/TRaid/data/watchdog.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/martinmana/Documents/Projects/TRaid/data/watchdog.log</string>
+</dict>
+</plist>

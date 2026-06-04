@@ -15,6 +15,12 @@ def test_normalize_ticker_nzx_idempotent():
     assert normalize_ticker("AIR.NZ", market="NZX") == "AIR.NZ"
 
 
+def test_normalize_ticker_asx_gets_suffix():
+    assert normalize_ticker("AZY", market="ASX") == "AZY.AX"
+    assert normalize_ticker("del", market="AU") == "DEL.AX"
+    assert normalize_ticker("DEL.AX", market="ASX") == "DEL.AX"
+
+
 def test_normalize_fx_pair():
     assert normalize_fx_pair("NZDUSD") == "NZDUSD=X"
     assert normalize_fx_pair("nzd/usd") == "NZDUSD=X"
