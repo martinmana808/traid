@@ -104,11 +104,11 @@ def send_telegram(text):
 
 
 def send_mac(title, text):
+    # Pass text/title as argv so osascript needs no inline string escaping
+    # (robust to em-dashes, emojis, quotes, etc.).
+    script = "on run argv\ndisplay notification (item 1 of argv) with title (item 2 of argv)\nend run"
     try:
-        subprocess.run(
-            ["osascript", "-e", f'display notification {json.dumps(text)} with title {json.dumps(title)}'],
-            check=False, timeout=10,
-        )
+        subprocess.run(["osascript", "-e", script, text, title], check=False, timeout=10)
         return True
     except Exception:  # noqa: BLE001
         return False
