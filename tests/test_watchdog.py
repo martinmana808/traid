@@ -1,4 +1,19 @@
-from tools.watchdog import evaluate_alerts
+from tools.watchdog import evaluate_alerts, build_digest
+
+
+def test_build_digest_winner_loser_and_total():
+    holdings = [
+        {"ticker": "NVDA", "shares": 10, "currency": "USD"},
+        {"ticker": "USF", "shares": 10, "currency": "NZD"},
+    ]
+    quotes = {
+        "NVDA": {"price": 200.0, "change_pct": 5.0},
+        "USF": {"price": 20.0, "change_pct": -2.0},
+    }
+    msg = build_digest(holdings, quotes, 0.5, "2026-06-08")  # NZDUSD 0.5 -> USD*2
+    assert "Winner: NVDA +5.0%" in msg
+    assert "Loser:  USF -2.0%" in msg
+    assert "Portfolio:" in msg and "NZD" in msg
 
 
 def base_cfg():
