@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  TRaid DAILY DIGEST schedule (macOS launchd). Runs weekdays at 6:00pm
+  Argentina time (1 hour after US market close) and pushes the end-of-day
+  portfolio summary to Telegram + Mac.
+
+  Install:
+    cp scripts/com.traid.digest.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.traid.digest.plist
+  Remove:
+    launchctl unload ~/Library/LaunchAgents/com.traid.digest.plist
+
+  NOTE: launchd only fires when the Mac is awake. If your laptop is asleep
+  at 6pm it runs at next wake (once). For guaranteed delivery regardless of
+  your laptop, a cloud cron (e.g. GitHub Actions) would be the upgrade.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.traid.digest</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/martinmana/Documents/Projects/TRaid/.venv/bin/python</string>
+    <string>/Users/martinmana/Documents/Projects/TRaid/tools/watchdog.py</string>
+    <string>--digest</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/martinmana/Documents/Projects/TRaid</string>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
+  <key>StandardOutPath</key>
+  <string>/Users/martinmana/Documents/Projects/TRaid/data/digest.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/martinmana/Documents/Projects/TRaid/data/digest.log</string>
+</dict>
+</plist>
