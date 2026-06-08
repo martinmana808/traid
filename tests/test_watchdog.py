@@ -1,4 +1,16 @@
-from tools.watchdog import evaluate_alerts, build_digest
+from tools.watchdog import evaluate_alerts, build_digest, build_tech_prompt
+
+
+def test_build_tech_prompt_ranks_and_includes_data():
+    movers = [
+        {"ticker": "MSFT", "price": 416.0, "change_pct": 9.0},
+        {"ticker": "RKLB", "price": 120.0, "change_pct": -6.0},
+    ]
+    p = build_tech_prompt(movers, "2026-06-08")
+    assert "MSFT: +9.0%" in p and "RKLB: -6.0%" in p
+    assert "WINNER" in p and "LOSER" in p
+    # highest mover should appear before the lowest (ranked desc)
+    assert p.index("MSFT") < p.index("RKLB")
 
 
 def test_build_digest_winner_loser_and_total():

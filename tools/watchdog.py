@@ -145,7 +145,7 @@ def _gather():
 
 
 def run_check(dry_run=False):
-    config = {"move_pct": float(os.environ.get("WATCHDOG_MOVE_PCT", 7)), "fif_warn": 45000}
+    config = {"move_pct": float(os.environ.get("WATCHDOG_MOVE_PCT", 5)), "fif_warn": 45000}
     holdings, quotes, matured, fif_cost = _gather()
     state = load_json(STATE_PATH, {"alerted_ids": []})
     alerts, new_state = evaluate_alerts(holdings, quotes, matured, fif_cost, state, config)
@@ -230,6 +230,85 @@ def run_digest(dry_run=False):
     print(f"\nTelegram sent: {ok} ({info})")
 
 
+# --- AI tech-scene digest (Grok / xAI) ------------------------------------
+# Broad tech/AI watchlist (NOT just holdings) — gives the "whole tech scene" view.
+TECH_WATCHLIST = ["NVDA", "MSFT", "AAPL", "GOOGL", "AMZN", "META", "TSLA",
+                  "AMD", "AVGO", "TSM", "PLTR", "RKLB", "ARM", "MU", "QQQ"]
+
+
+def gather_movers(tickers):
+    from tools.market import quote
+    out = []
+    for t in tickers:
+        q = quote(t)
+        if q.get("change_pct") is not None:
+            out.append({"ticker": t, "price": q.get("price"), "change_pct": q["change_pct"]})
+    return out
+
+
+def build_tech_prompt(movers, date_str):
+    ranked = sorted(movers, key=lambda m: m["change_pct"], reverse=True)
+    body = "\n".join(f"{m['ticker']}: {m['change_pct']:+.1f}% (${m['price']})" for m in ranked)
+    return (
+        f"Today is {date_str}. Daily % moves for major tech/AI stocks:\n{body}\n\n"
+        "Write a SHORT (~110 words) daily tech digest for Martin (NZ investor; holds NVDA, TSLA, "
+        "PLTR, RKLB, QQQ). Include: today's clear WINNER and LOSER of this group; the overall tech "
+        "mood in one line; and 1-2 names 'worth a look' with a one-line HONEST reason (dip-buy? "
+        "overheated? momentum?). No hype. Flag uncertainty. End with exactly: 'Ping TRaid to dig deeper.'"
+    )
+
+
+def grok_chat(prompt, api_key=None, model=None):
+    api_key = api_key or os.environ.get("GROK_API_KEY")
+    model = model or os.environ.get("GROK_MODEL") or "grok-3"
+    if not api_key:
+        return None, "missing GROK_API_KEY"
+    payload = json.dumps({
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are TRaid, a sharp, honest tech/AI market analyst. No hype; flag uncertainty; never give blind buy signals."},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.6,
+        "max_tokens": 400,
+    }).encode()
+    req = urllib.request.Request(
+        "https://api.x.ai/v1/chat/completions", data=payload,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=45) as r:
+            d = json.load(r)
+        return d["choices"][0]["message"]["content"].strip(), 200
+    except Exception as e:  # noqa: BLE001
+        return None, str(e)
+
+
+def run_tech_digest(dry_run=False):
+    movers = gather_movers(TECH_WATCHLIST)
+    if not movers:
+        print("tech-digest: no market data")
+        return
+    today = date.today().isoformat()
+    text, info = grok_chat(build_tech_prompt(movers, today))
+    if text:
+        msg = f"🤖 TRaid Tech Digest — {today}\n\n{text}"
+    else:  # resilient fallback: plain winner/loser if Grok unavailable
+        ranked = sorted(movers, key=lambda m: m["change_pct"], reverse=True)
+        w, l = ranked[0], ranked[-1]
+        msg = (f"📊 TRaid Tech — {today}\n"
+               f"🟢 Winner: {w['ticker']} {w['change_pct']:+.1f}%\n"
+               f"🔴 Loser:  {l['ticker']} {l['change_pct']:+.1f}%\n"
+               f"(AI digest off: {info})")
+    print(msg)
+    if dry_run:
+        print("\n(dry run — not sending)")
+        return
+    ok, sinfo = send_telegram(msg)
+    send_mac("TRaid Tech Digest", "Daily tech-scene digest")
+    print(f"\nTelegram sent: {ok} ({sinfo})")
+
+
 def get_chat_id():
     load_env()
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -252,6 +331,7 @@ def main(argv=None):
     p = argparse.ArgumentParser(description="TRaid proactive watchdog")
     p.add_argument("--check", action="store_true", help="run checks and send alerts")
     p.add_argument("--digest", action="store_true", help="send the daily portfolio digest")
+    p.add_argument("--tech-digest", action="store_true", dest="tech_digest", help="send the AI tech-scene digest (Grok)")
     p.add_argument("--dry-run", action="store_true", help="print alerts without sending")
     p.add_argument("--test", action="store_true", help="send a test notification")
     p.add_argument("--get-chat-id", action="store_true", help="Telegram setup helper")
@@ -263,6 +343,8 @@ def main(argv=None):
         ok, info = send_telegram("✅ TRaid Watchdog test — notifications are working.")
         send_mac("TRaid Watchdog", "Test notification — it works!")
         print(f"Telegram: {ok} ({info}); Mac notification sent.")
+    elif args.tech_digest:
+        run_tech_digest(dry_run=args.dry_run)
     elif args.digest:
         run_digest(dry_run=args.dry_run)
     elif args.check:
