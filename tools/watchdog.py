@@ -236,6 +236,22 @@ TECH_WATCHLIST = ["NVDA", "MSFT", "AAPL", "GOOGL", "AMZN", "META", "TSLA",
                   "AMD", "AVGO", "TSM", "ASML", "PLTR", "RKLB", "ARM", "MU", "QQQ"]
 
 
+WATCHLIST_PATH = os.path.join(ROOT, "watchlist.json")
+
+
+def load_watchlist():
+    """Editable watchlist.json (repo root) → list of tickers; falls back to the
+    built-in TECH_WATCHLIST if the file is missing/unreadable."""
+    try:
+        with open(WATCHLIST_PATH) as f:
+            data = json.load(f)
+        tickers = data if isinstance(data, list) else data.get("tech", [])
+        cleaned = [str(t).strip().upper() for t in tickers if str(t).strip()]
+        return cleaned or TECH_WATCHLIST
+    except Exception:  # noqa: BLE001
+        return TECH_WATCHLIST
+
+
 def gather_movers(tickers):
     from tools.market import quote
     out = []
@@ -291,7 +307,7 @@ def groq_chat(prompt, api_key=None, model=None):
 
 
 def run_tech_digest(dry_run=False):
-    movers = gather_movers(TECH_WATCHLIST)
+    movers = gather_movers(load_watchlist())
     if not movers:
         print("tech-digest: no market data")
         return
