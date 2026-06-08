@@ -233,7 +233,7 @@ def run_digest(dry_run=False):
 # --- AI tech-scene digest (Grok / xAI) ------------------------------------
 # Broad tech/AI watchlist (NOT just holdings) — gives the "whole tech scene" view.
 TECH_WATCHLIST = ["NVDA", "MSFT", "AAPL", "GOOGL", "AMZN", "META", "TSLA",
-                  "AMD", "AVGO", "TSM", "PLTR", "RKLB", "ARM", "MU", "QQQ"]
+                  "AMD", "AVGO", "TSM", "ASML", "PLTR", "RKLB", "ARM", "MU", "QQQ"]
 
 
 def gather_movers(tickers):
@@ -258,11 +258,13 @@ def build_tech_prompt(movers, date_str):
     )
 
 
-def grok_chat(prompt, api_key=None, model=None):
-    api_key = api_key or os.environ.get("GROK_API_KEY")
-    model = model or os.environ.get("GROK_MODEL") or "grok-3"
+def groq_chat(prompt, api_key=None, model=None):
+    # Groq (groq.com) — free, fast, OpenAI-compatible. Accepts GROQ_API_KEY or
+    # the legacy GROK_API_KEY env name (so existing secrets keep working).
+    api_key = api_key or os.environ.get("GROQ_API_KEY") or os.environ.get("GROK_API_KEY")
+    model = model or os.environ.get("GROQ_MODEL") or os.environ.get("GROK_MODEL") or "llama-3.3-70b-versatile"
     if not api_key:
-        return None, "missing GROK_API_KEY"
+        return None, "missing GROQ_API_KEY"
     payload = json.dumps({
         "model": model,
         "messages": [
@@ -273,8 +275,12 @@ def grok_chat(prompt, api_key=None, model=None):
         "max_tokens": 400,
     }).encode()
     req = urllib.request.Request(
-        "https://api.x.ai/v1/chat/completions", data=payload,
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        "https://api.groq.com/openai/v1/chat/completions", data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "TRaid/1.0 (+https://github.com/martinmana808/traid)",
+        },
     )
     try:
         with urllib.request.urlopen(req, timeout=45) as r:
@@ -290,7 +296,7 @@ def run_tech_digest(dry_run=False):
         print("tech-digest: no market data")
         return
     today = date.today().isoformat()
-    text, info = grok_chat(build_tech_prompt(movers, today))
+    text, info = groq_chat(build_tech_prompt(movers, today))
     if text:
         msg = f"🤖 TRaid Tech Digest — {today}\n\n{text}"
     else:  # resilient fallback: plain winner/loser if Grok unavailable

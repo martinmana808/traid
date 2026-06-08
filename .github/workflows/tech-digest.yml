@@ -21,6 +21,6 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
-          GROK_MODEL: ${{ secrets.GROK_MODEL }}
+          # your GitHub secret is named GROK_API_KEY; the code accepts it as the Groq key
+          GROQ_API_KEY: ${{ secrets.GROK_API_KEY }}
         run: python tools/watchdog.py --tech-digest
