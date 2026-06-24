@@ -1,0 +1,18 @@
+# Vercel only needs the webhook function (api/) + vercel.json.
+# Keep the Python analyst, tests, and ALL personal data out of the deploy —
+# the webhook reads nothing from the repo; its context comes from env vars.
+tools/
+scripts/
+data/
+bank-statements/
+tests/
+docs/
+.github/
+.venv/
+__pycache__/
+.pytest_cache/
+*.py
+*.md
+conftest.py
+requirements.txt
+watchlist.json
