@@ -15,3 +15,13 @@ data/predictions.jsonl
 data/*.csv
 data/watchdog_state.json
 data/*.log
+
+# Bank statements — highly sensitive, never commit (public repo)
+bank-statements/
+
+# Personal tax briefing — keep local
+data/contador-briefing.md
+.vercel
+
+# macOS
+.DS_Store
