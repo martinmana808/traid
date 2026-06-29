@@ -60,6 +60,12 @@ def test_render_has_panel_and_crosshair_link():
     assert html.count("subscribeVisibleLogicalRangeChange") >= 1
 
 
+def test_render_has_dividers_and_full_height():
+    html = render_chart_html(_payload())
+    assert "border-top: 1px solid #c8ccd4" in html   # pane dividers
+    assert "100vh" in html                            # fills viewport height
+
+
 def test_session_index_links_each_entry():
     html = render_session_index("2026-06-28", [
         {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},

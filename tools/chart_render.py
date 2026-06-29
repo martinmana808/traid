@@ -21,15 +21,18 @@ _TEMPLATE = """<!doctype html>
   #title{font-weight:600;font-size:15px}
   #subtitle{color:#9aa0ad;margin-left:8px}
   .label{padding:2px 14px;color:#787b86;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-  .pane{width:100%}
+  .pane + .label{border-top: 1px solid #c8ccd4;padding-top:4px}
+  .pane{width:100%;min-height:0}
   #timeframe{padding:6px 14px;display:flex;gap:6px;border-bottom:1px solid #1c1f2b}
   #timeframe button{background:#1c1f2b;color:#9aa0ad;border:1px solid #2a2e39;border-radius:4px;
     padding:3px 10px;cursor:pointer;font-size:12px}
   #timeframe button.active{background:#2a2e39;color:#d1d4dc;border-color:#5b8def}
   #legend{padding:10px 14px;color:#787b86;border-top:1px solid #1c1f2b}
   #legend b{color:#9aa0ad}
-  #layout{display:flex;flex-direction:row}
-  #charts-col{flex:1;min-width:0}
+  #layout{display:flex;flex-direction:row;min-height:100vh}
+  #charts-col{flex:1;min-width:0;display:flex;flex-direction:column}
+  #price{flex:3;min-height:220px}
+  #rsi,#macd,#stoch{flex:1;min-height:90px}
   #panel{width:230px;flex-shrink:0;background:#0b0d14;border-left:1px solid #1c1f2b;
     padding:10px 12px;overflow-y:auto;font-size:12px;line-height:1.6;color:#9aa0ad}
   #panel h3{margin:0 0 6px;font-size:12px;color:#d1d4dc;text-transform:uppercase;letter-spacing:.05em}
