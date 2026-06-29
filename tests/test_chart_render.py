@@ -51,6 +51,15 @@ def test_render_embeds_call_metadata():
     assert "buy" in html and "high" in html
 
 
+def test_render_has_panel_and_crosshair_link():
+    html = render_chart_html(_payload())
+    assert 'id="panel"' in html
+    assert "subscribeCrosshairMove" in html
+    assert "setCrosshairPosition" in html
+    # summary recompute is wired to range changes too
+    assert html.count("subscribeVisibleLogicalRangeChange") >= 1
+
+
 def test_session_index_links_each_entry():
     html = render_session_index("2026-06-28", [
         {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},

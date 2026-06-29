@@ -28,13 +28,31 @@ _TEMPLATE = """<!doctype html>
   #timeframe button.active{background:#2a2e39;color:#d1d4dc;border-color:#5b8def}
   #legend{padding:10px 14px;color:#787b86;border-top:1px solid #1c1f2b}
   #legend b{color:#9aa0ad}
+  #layout{display:flex;flex-direction:row}
+  #charts-col{flex:1;min-width:0}
+  #panel{width:230px;flex-shrink:0;background:#0b0d14;border-left:1px solid #1c1f2b;
+    padding:10px 12px;overflow-y:auto;font-size:12px;line-height:1.6;color:#9aa0ad}
+  #panel h3{margin:0 0 6px;font-size:12px;color:#d1d4dc;text-transform:uppercase;letter-spacing:.05em}
+  #panel .row{display:flex;justify-content:space-between;margin:2px 0}
+  #panel .key{color:#787b86}
+  #panel .val{color:#d1d4dc;font-weight:600}
+  #panel .read{color:#e0a73e;font-size:11px}
+  #panel .sep{border-top:1px solid #1c1f2b;margin:8px 0}
+  #panel .note{color:#787b86;font-size:11px;margin-top:8px}
+  #panel .bull{color:#26a69a}
+  #panel .bear{color:#ef5350}
 </style></head><body>
 <div id="header"><span id="title">__TITLE__</span><span id="subtitle">__SUBTITLE__</span></div>
 <div id="timeframe">__TIMEFRAME__</div>
+<div id="layout">
+<div id="charts-col">
 <div class="label">Price · Bollinger · Volume</div><div class="pane" id="price"></div>
 <div class="label">RSI (14)</div><div class="pane" id="rsi"></div>
 <div class="label">MACD (12,26,9)</div><div class="pane" id="macd"></div>
 <div class="label">Stochastic (14,3)</div><div class="pane" id="stoch"></div>
+</div>
+<div id="panel"><h3>Info</h3><div id="panel-body">Loading…</div></div>
+</div>
 <div id="legend">__LEGEND__</div>
 <script>
 const DATA = __DATA__;
@@ -86,12 +104,171 @@ charts.forEach(src => src.timeScale().subscribeVisibleLogicalRangeChange(range =
     if(dst !== src){ try{ dst.timeScale().setVisibleLogicalRange(range); }catch(e){} }
   });
   syncing = false;
+  updateSummaryPanel();
 }));
 
 let srLines = [];
 function clearSR(){ srLines.forEach(l => candles.removePriceLine(l)); srLines = []; }
 
+// Per-resolution time→value maps for crosshair linking
+// [candleMap, rsiMap, macdLineMap, kMap]
+let _resMaps = {candle:new Map(),rsi:new Map(),macdLine:new Map(),k:new Map()};
+let _currentRes = null;
+
+function buildResMaps(res){
+  const d = DATA.resolutions[res];
+  const cm = new Map(); d.candles.forEach(p=>{ if(p.close!=null) cm.set(p.time,p.close); });
+  const rm = new Map(); d.rsi.forEach(p=>{ if(p.value!=null) rm.set(p.time,p.value); });
+  const mm = new Map(); d.macd.macd.forEach(p=>{ if(p.value!=null) mm.set(p.time,p.value); });
+  const km = new Map(); d.stochastic.k.forEach(p=>{ if(p.value!=null) km.set(p.time,p.value); });
+  _resMaps = {candle:cm, rsi:rm, macdLine:mm, k:km};
+}
+
+// Reading helpers
+function rsiRead(v){ return v==null?'—':v>70?'Overbought':v<30?'Oversold':'Neutral'; }
+function stochRead(v){ return v==null?'—':v>80?'Overbought':v<20?'Oversold':'Neutral'; }
+function macdRead(hist){ return hist==null?'—':hist>=0?'Bullish':'Bearish'; }
+function bbRead(p,upper,lower){
+  if(p==null||upper==null||lower==null) return '—';
+  return p>upper?'Stretched high':p<lower?'Stretched low':'Within bands';
+}
+
+function fmt(v,dec){ return v==null?'—':v.toFixed(dec==null?2:dec); }
+function cls(v){ return v==null?'':v>=0?'bull':'bear'; }
+
+function lastDefined(arr){
+  if(!arr) return null;
+  for(let i=arr.length-1;i>=0;i--){ if(arr[i].value!=null) return arr[i].value; }
+  return null;
+}
+function lastDefinedInRange(arr,fromIdx,toIdx){
+  if(!arr) return null;
+  const lo=Math.max(0,Math.floor(fromIdx)), hi=Math.min(arr.length-1,Math.ceil(toIdx));
+  for(let i=hi;i>=lo;i--){ if(arr[i]&&arr[i].value!=null) return arr[i].value; }
+  return null;
+}
+
+function updateSummaryPanel(){
+  const res = _currentRes;
+  if(!res) return;
+  const d = DATA.resolutions[res];
+  const range = price.timeScale().getVisibleLogicalRange();
+  let canArr = d.candles;
+  let lo=0, hi=canArr.length-1;
+  if(range){ lo=Math.max(0,Math.floor(range.from)); hi=Math.min(canArr.length-1,Math.ceil(range.to)); }
+  const vis = canArr.slice(lo,hi+1).filter(p=>p.open!=null);
+  if(!vis.length){ document.getElementById('panel-body').innerHTML='<span>No visible candles.</span>'; return; }
+  const first=vis[0], last=vis[vis.length-1];
+  const O=first.open, C=last.close;
+  const H=Math.max(...vis.map(p=>p.high));
+  const L=Math.min(...vis.map(p=>p.low));
+  const chg=((C/O-1)*100);
+  const rsiV=lastDefinedInRange(d.rsi,lo,hi);
+  const macdV=lastDefinedInRange(d.macd.macd,lo,hi);
+  const sigV=lastDefinedInRange(d.macd.signal,lo,hi);
+  const histV=lastDefinedInRange(d.macd.hist,lo,hi);
+  const kV=lastDefinedInRange(d.stochastic.k,lo,hi);
+  const dV=lastDefinedInRange(d.stochastic.d,lo,hi);
+  const bbUV=lastDefinedInRange(d.bollinger.upper,lo,hi);
+  const bbMV=lastDefinedInRange(d.bollinger.middle,lo,hi);
+  const bbLV=lastDefinedInRange(d.bollinger.lower,lo,hi);
+  const bbR=bbRead(C,bbUV,bbLV);
+  const sr=d.support!=null?`S ${fmt(d.support)} / R ${fmt(d.resistance)}`:'—';
+  const call=DATA.call||(DATA.meta&&DATA.meta.call)||'—';
+  document.getElementById('panel-body').innerHTML=`
+<div class="row"><span class="key">Range</span><span class="val">${first.time} → ${last.time}</span></div>
+<div class="row"><span class="key">O</span><span class="val">${fmt(O)}</span></div>
+<div class="row"><span class="key">H</span><span class="val">${fmt(H)}</span></div>
+<div class="row"><span class="key">L</span><span class="val">${fmt(L)}</span></div>
+<div class="row"><span class="key">C</span><span class="val">${fmt(C)}</span></div>
+<div class="row"><span class="key">Change</span><span class="val ${cls(chg)}">${chg>=0?'+':''}${fmt(chg,2)}%</span></div>
+<div class="sep"></div>
+<div class="row"><span class="key">RSI</span><span class="val">${fmt(rsiV)}</span><span class="read">${rsiRead(rsiV)}</span></div>
+<div class="row"><span class="key">MACD</span><span class="val">${fmt(macdV)}</span><span class="read ${cls(histV)}">${macdRead(histV)}</span></div>
+<div class="row"><span class="key">Signal</span><span class="val">${fmt(sigV)}</span></div>
+<div class="row"><span class="key">Hist</span><span class="val ${cls(histV)}">${fmt(histV)}</span></div>
+<div class="row"><span class="key">Stoch K</span><span class="val">${fmt(kV)}</span><span class="read">${stochRead(kV)}</span></div>
+<div class="row"><span class="key">Stoch D</span><span class="val">${fmt(dV)}</span></div>
+<div class="row"><span class="key">BB</span><span class="read">${bbR}</span></div>
+<div class="row"><span class="key">BB U/M/L</span><span class="val">${fmt(bbUV)}/${fmt(bbMV)}/${fmt(bbLV)}</span></div>
+<div class="sep"></div>
+<div class="row"><span class="key">S/R</span><span class="val">${sr}</span></div>
+<div class="row"><span class="key">Call</span><span class="val">${call}</span></div>
+<div class="note">Context for timing — not financial advice.</div>`;
+}
+
+function showHoverPanel(time){
+  const res = _currentRes;
+  if(!res) return;
+  const d = DATA.resolutions[res];
+  const idx = d.candles.findIndex(p=>p.time===time);
+  if(idx<0){ updateSummaryPanel(); return; }
+  const c=d.candles[idx];
+  const rsiV=(d.rsi[idx]&&d.rsi[idx].value!=null)?d.rsi[idx].value:null;
+  const macdV=(d.macd.macd[idx]&&d.macd.macd[idx].value!=null)?d.macd.macd[idx].value:null;
+  const sigV=(d.macd.signal[idx]&&d.macd.signal[idx].value!=null)?d.macd.signal[idx].value:null;
+  const histV=(d.macd.hist[idx]&&d.macd.hist[idx].value!=null)?d.macd.hist[idx].value:null;
+  const kV=(d.stochastic.k[idx]&&d.stochastic.k[idx].value!=null)?d.stochastic.k[idx].value:null;
+  const dV=(d.stochastic.d[idx]&&d.stochastic.d[idx].value!=null)?d.stochastic.d[idx].value:null;
+  const bbUV=(d.bollinger.upper[idx]&&d.bollinger.upper[idx].value!=null)?d.bollinger.upper[idx].value:null;
+  const bbMV=(d.bollinger.middle[idx]&&d.bollinger.middle[idx].value!=null)?d.bollinger.middle[idx].value:null;
+  const bbLV=(d.bollinger.lower[idx]&&d.bollinger.lower[idx].value!=null)?d.bollinger.lower[idx].value:null;
+  const vol=(d.volume[idx]&&d.volume[idx].value!=null)?d.volume[idx].value:null;
+  const chg=c.open&&c.close?((c.close/c.open-1)*100):null;
+  const bbR=bbRead(c.close,bbUV,bbLV);
+  document.getElementById('panel-body').innerHTML=`
+<div class="row"><span class="key">Date</span><span class="val">${time}</span></div>
+<div class="row"><span class="key">O</span><span class="val">${fmt(c.open)}</span></div>
+<div class="row"><span class="key">H</span><span class="val">${fmt(c.high)}</span></div>
+<div class="row"><span class="key">L</span><span class="val">${fmt(c.low)}</span></div>
+<div class="row"><span class="key">C</span><span class="val">${fmt(c.close)}</span></div>
+<div class="row"><span class="key">Change</span><span class="val ${chg!=null?cls(chg):''}">${chg!=null?(chg>=0?'+':'')+fmt(chg,2)+'%':'—'}</span></div>
+<div class="row"><span class="key">Vol</span><span class="val">${vol!=null?Math.round(vol).toLocaleString():'—'}</span></div>
+<div class="sep"></div>
+<div class="row"><span class="key">RSI</span><span class="val">${fmt(rsiV)}</span><span class="read">${rsiRead(rsiV)}</span></div>
+<div class="row"><span class="key">MACD</span><span class="val">${fmt(macdV)}</span><span class="read ${cls(histV)}">${macdRead(histV)}</span></div>
+<div class="row"><span class="key">Signal</span><span class="val">${fmt(sigV)}</span></div>
+<div class="row"><span class="key">Hist</span><span class="val ${cls(histV)}">${fmt(histV)}</span></div>
+<div class="row"><span class="key">Stoch K</span><span class="val">${fmt(kV)}</span><span class="read">${stochRead(kV)}</span></div>
+<div class="row"><span class="key">Stoch D</span><span class="val">${fmt(dV)}</span></div>
+<div class="row"><span class="key">BB</span><span class="read">${bbR}</span></div>
+<div class="row"><span class="key">BB U/M/L</span><span class="val">${fmt(bbUV)}/${fmt(bbMV)}/${fmt(bbLV)}</span></div>
+<div class="note">Context for timing — not financial advice.</div>`;
+}
+
+// Linked crosshair
+let chsyncing = false;
+const paneEntries = [
+  {chart: price,  series: candles,  map: ()=>_resMaps.candle},
+  {chart: rsiC,   series: rsiS,     map: ()=>_resMaps.rsi},
+  {chart: macdC,  series: macdLine, map: ()=>_resMaps.macdLine},
+  {chart: stoch,  series: kS,       map: ()=>_resMaps.k},
+];
+paneEntries.forEach(({chart,series},i) => {
+  chart.subscribeCrosshairMove(param => {
+    if(chsyncing) return;
+    chsyncing = true;
+    if(param && param.time){
+      showHoverPanel(param.time);
+      paneEntries.forEach(({chart:dst,series:ds,map},j) => {
+        if(j===i) return;
+        const v = map().get(param.time);
+        if(v!=null){ try{ dst.setCrosshairPosition(v,param.time,ds); }catch(e){} }
+      });
+    } else {
+      updateSummaryPanel();
+      paneEntries.forEach(({chart:dst},j) => {
+        if(j===i) return;
+        try{ dst.clearCrosshairPosition(); }catch(e){}
+      });
+    }
+    chsyncing = false;
+  });
+});
+
 function loadResolution(res){
+  _currentRes = res;
+  buildResMaps(res);
   const d = DATA.resolutions[res];
   candles.setData(d.candles);
   bbU.setData(d.bollinger.upper);
@@ -112,6 +289,7 @@ function loadResolution(res){
   if(d.resistance != null){ srLines.push(candles.createPriceLine({price:d.resistance,color:'#ef5350',
     lineWidth:1,lineStyle:2,axisLabelVisible:true,title:'R '+d.resistance})); }
   charts.forEach(c => c.timeScale().fitContent());
+  updateSummaryPanel();
 }
 
 // Timeframe toggle
