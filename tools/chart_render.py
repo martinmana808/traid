@@ -54,13 +54,14 @@ _TEMPLATE = """<!doctype html>
     border-radius:4px;padding:7px 10px;max-width:260px;font-size:11px;line-height:1.5;
     pointer-events:none;display:none;z-index:100;white-space:normal}
   .label.hidden{display:none}
+  .dim-mask{position:absolute;top:0;bottom:0;background:rgba(14,14,18,0.6);pointer-events:none;z-index:3;display:none}
 </style></head><body>
 <div id="header"><span id="title">__TITLE__</span><span id="subtitle">__SUBTITLE__</span></div>
 <div id="timeframe">__TIMEFRAME__</div>
 <div id="layout">
 <div id="charts-col">
 <div class="label">Price · Bollinger · Volume</div>
-<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb">BB</span><span class="tog" data-toggle="vol">Vol</span></div></div>
+<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb">BB</span><span class="tog" data-toggle="vol">Vol</span></div><div id="mask-left" class="dim-mask"></div><div id="mask-right" class="dim-mask"></div></div>
 <div class="label" data-label-for="rsi">RSI (14)</div>
 <div class="pane" id="rsi"><div class="tog-cluster"><span class="tog" data-toggle="rsi">RSI</span></div></div>
 <div class="label" data-label-for="macd">MACD (12,26,9)</div>
@@ -123,6 +124,39 @@ function visibleCharts(){
 }
 
 let syncing = false;
+let sel = null;
+let dragging = false;
+let dragStartX = 0;
+
+function hideMasks(){
+  document.getElementById('mask-left').style.display='none';
+  document.getElementById('mask-right').style.display='none';
+}
+function positionMasks(){
+  const mL = document.getElementById('mask-left');
+  const mR = document.getElementById('mask-right');
+  if(!sel){ hideMasks(); return; }
+  const paneEl = document.getElementById('price');
+  const paneWidth = paneEl.offsetWidth;
+  let fromX = price.timeScale().timeToCoordinate(sel.from);
+  let toX   = price.timeScale().timeToCoordinate(sel.to);
+  if(fromX == null) fromX = 0;
+  if(toX   == null) toX   = paneWidth;
+  fromX = Math.max(0, Math.min(paneWidth, fromX));
+  toX   = Math.max(0, Math.min(paneWidth, toX));
+  mL.style.left = '0';
+  mL.style.width = fromX + 'px';
+  mL.style.display = 'block';
+  mR.style.left = toX + 'px';
+  mR.style.width = (paneWidth - toX) + 'px';
+  mR.style.display = 'block';
+}
+function clearSelection(){
+  sel = null;
+  hideMasks();
+  updateSummaryPanel();
+}
+
 // Subscribe all 4 charts; handlers use visibleCharts() to avoid touching collapsed panes
 [price,rsiC,macdC,stoch].forEach(src => src.timeScale().subscribeVisibleLogicalRangeChange(range => {
   if(syncing) return;
@@ -133,6 +167,7 @@ let syncing = false;
   });
   syncing = false;
   updateSummaryPanel();
+  positionMasks();
 }));
 
 let srLines = [];
@@ -180,10 +215,22 @@ function updateSummaryPanel(){
   const res = _currentRes;
   if(!res) return;
   const d = DATA.resolutions[res];
-  const range = price.timeScale().getVisibleLogicalRange();
   let canArr = d.candles;
   let lo=0, hi=canArr.length-1;
-  if(range){ lo=Math.max(0,Math.floor(range.from)); hi=Math.min(canArr.length-1,Math.ceil(range.to)); }
+  let panelHeader = '';
+  if(sel){
+    let fromIdx = canArr.findIndex(p => p.time >= sel.from);
+    let toIdx = -1;
+    for(let i=canArr.length-1; i>=0; i--){ if(canArr[i].time <= sel.to){ toIdx=i; break; } }
+    if(fromIdx < 0) fromIdx = 0;
+    if(toIdx < 0) toIdx = canArr.length-1;
+    lo = fromIdx;
+    hi = toIdx;
+    panelHeader = `<div class="row"><span class="key" style="text-transform:uppercase;color:#e0a73e">Selection</span><span class="val" style="color:#e0a73e">${sel.from} → ${sel.to}</span></div>`;
+  } else {
+    const range = price.timeScale().getVisibleLogicalRange();
+    if(range){ lo=Math.max(0,Math.floor(range.from)); hi=Math.min(canArr.length-1,Math.ceil(range.to)); }
+  }
   const vis = canArr.slice(lo,hi+1).filter(p=>p.open!=null);
   if(!vis.length){ document.getElementById('panel-body').innerHTML='<span>No visible candles.</span>'; return; }
   const first=vis[0], last=vis[vis.length-1];
@@ -220,7 +267,7 @@ function updateSummaryPanel(){
   const bbPctB = (bbUV!=null&&bbLV!=null&&(bbUV-bbLV)>0)?((C-bbLV)/(bbUV-bbLV)):null;
   const distS = (d.support!=null&&C>0)?((d.support/C-1)*100):null;
   const distR = (d.resistance!=null&&C>0)?((d.resistance/C-1)*100):null;
-  document.getElementById('panel-body').innerHTML=`
+  document.getElementById('panel-body').innerHTML=panelHeader+`
 <div class="row"><span class="key">Range</span><span class="val">${first.time} → ${last.time}</span></div>
 <div class="row"><span class="key">O</span><span class="val">${fmt(O)}</span></div>
 <div class="row"><span class="key">H (vis)</span><span class="val">${fmt(H)}</span></div>
@@ -354,6 +401,7 @@ document.querySelectorAll('.tog').forEach(chip => {
 });
 
 function loadResolution(res){
+  clearSelection();
   _currentRes = res;
   buildResMaps(res);
   const d = DATA.resolutions[res];
@@ -376,6 +424,7 @@ function loadResolution(res){
   if(d.resistance != null){ srLines.push(candles.createPriceLine({price:d.resistance,color:'#ef5350',
     lineWidth:1,lineStyle:2,axisLabelVisible:true,title:'R '+d.resistance})); }
   visibleCharts().forEach(c => c.timeScale().fitContent());
+  positionMasks();
   updateSummaryPanel();
 }
 
@@ -389,6 +438,45 @@ buttons.forEach(btn => btn.addEventListener('click', () => {
 const defBtn = document.querySelector('#timeframe button[data-res="'+DATA.default+'"]');
 if(defBtn){ defBtn.classList.add('active'); }
 loadResolution(DATA.default);
+
+// Shift+drag range selection on price pane
+(function(){
+  const priceEl = document.getElementById('price');
+  priceEl.addEventListener('mousedown', function(e){
+    if(e.shiftKey){
+      dragging = true;
+      dragStartX = e.offsetX;
+      e.preventDefault();
+    } else {
+      clearSelection();
+    }
+  });
+  document.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    const rect = priceEl.getBoundingClientRect();
+    const curX = e.clientX - rect.left;
+    const minX = Math.min(dragStartX, curX);
+    const maxX = Math.max(dragStartX, curX);
+    const canArr = DATA.resolutions[_currentRes] ? DATA.resolutions[_currentRes].candles : [];
+    let fromTime = price.timeScale().coordinateToTime(minX);
+    let toTime   = price.timeScale().coordinateToTime(maxX);
+    if(fromTime == null) fromTime = canArr.length ? canArr[0].time : null;
+    if(toTime   == null) toTime   = canArr.length ? canArr[canArr.length-1].time : null;
+    if(fromTime && toTime){ sel = {from: fromTime, to: toTime}; positionMasks(); }
+  });
+  document.addEventListener('mouseup', function(e){
+    if(!dragging) return;
+    const rect = priceEl.getBoundingClientRect();
+    const curX = e.clientX - rect.left;
+    const dist = Math.abs(curX - dragStartX);
+    dragging = false;
+    if(dist < 3){
+      clearSelection();
+    } else {
+      updateSummaryPanel();
+    }
+  });
+})();
 
 // Educational tooltips
 const TIPS = {

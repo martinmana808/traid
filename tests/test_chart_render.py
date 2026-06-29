@@ -118,6 +118,16 @@ def test_fundamentals_reading_on_own_line():
     assert "white-space:normal" in html
 
 
+def test_render_has_range_selection():
+    html = render_chart_html(_payload())
+    assert 'id="mask-left"' in html and 'id="mask-right"' in html
+    assert "dim-mask" in html
+    assert "shiftKey" in html
+    assert "coordinateToTime" in html
+    assert "timeToCoordinate" in html
+    assert "clearSelection" in html
+
+
 def test_session_index_links_each_entry():
     html = render_session_index("2026-06-28", [
         {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},
