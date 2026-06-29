@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tools.indicators import rsi, macd, bollinger, stochastic  # noqa: E402
 from tools.patterns import support_resistance  # noqa: E402
-from tools.market import history  # noqa: E402
+from tools.market import history, normalize_ticker  # noqa: E402
 
 
 def _line(dates, series):
@@ -68,6 +68,37 @@ def series_from_bars(bars):
         "support": sr["support"],
         "resistance": sr["resistance"],
     }
+
+
+RESOLUTIONS = [("1h", "3mo"), ("1d", "1y"), ("1wk", "5y"), ("1mo", "max")]
+
+
+def build_chart_payload(ticker, market=None, period=None):
+    resolutions = {}
+    for res, default_period in RESOLUTIONS:
+        p = period if (res == "1d" and period) else default_period
+        raw = history(ticker, p, market, interval=res)
+        if "error" in raw:
+            continue
+        bars = [b for b in raw.get("bars") or []
+                if all(isinstance(b.get(k), (int, float)) and math.isfinite(b[k])
+                       for k in ("open", "high", "low", "close"))]
+        if len(bars) < 30:
+            continue
+        resolutions[res] = {"_bars_last_close": round(float(bars[-1]["close"]), 2),
+                            "_bars_last_date": bars[-1]["date"],
+                            **series_from_bars(bars)}
+    if not resolutions:
+        return {"error": f"chart: no resolutions available for {ticker}"}
+    default = "1d" if "1d" in resolutions else next(iter(resolutions))
+    sym = normalize_ticker(ticker, market)  # label only — no extra fetch
+    as_of = resolutions[default].pop("_bars_last_date")
+    price = resolutions[default].pop("_bars_last_close")
+    for r in resolutions.values():
+        r.pop("_bars_last_close", None)
+        r.pop("_bars_last_date", None)
+    return {"ticker": sym, "as_of": as_of, "price": price,
+            "default": default, "resolutions": resolutions}
 
 
 def build_chart_data(ticker, market=None, period="1y"):

@@ -55,12 +55,12 @@ def quote(ticker, market=None):
         return error_response(f"quote failed for {sym}: {e}")
 
 
-def history(ticker, period, market=None):
+def history(ticker, period, market=None, interval="1d"):
     sym = normalize_ticker(ticker, market)
     try:
-        df = _yf().Ticker(sym).history(period=period)
+        df = _yf().Ticker(sym).history(period=period, interval=interval)
         if df.empty:
-            return error_response(f"no history for {sym} ({period})")
+            return error_response(f"no history for {sym} ({period}/{interval})")
         rows = [
             {
                 "date": idx.date().isoformat(),

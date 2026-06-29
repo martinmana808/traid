@@ -79,3 +79,37 @@ def test_build_chart_data_drops_nan_bars(monkeypatch):
     out = cd.build_chart_data("x")
     assert "error" not in out
     assert len(out["candles"]) == 58  # two NaN bars dropped
+
+
+def test_build_chart_payload_shape(monkeypatch):
+    def fake_history(t, p, m=None, interval="1d"):
+        return {"ticker": "NVDA", "period": p, "bars": _bars(60)}
+    monkeypatch.setattr(cd, "history", fake_history)
+    pay = cd.build_chart_payload("nvda")
+    assert pay["ticker"] == "NVDA"
+    assert pay["default"] == "1d"
+    assert set(pay["resolutions"]) == {"1h", "1d", "1wk", "1mo"}
+    assert "candles" in pay["resolutions"]["1d"]
+    assert pay["price"] == round(_bars(60)[-1]["close"], 2)
+
+
+def test_build_chart_payload_omits_failed_resolution(monkeypatch):
+    def fake_history(t, p, m=None, interval="1d"):
+        if interval == "1h":
+            return {"error": "no intraday"}
+        return {"ticker": "NVDA", "period": p, "bars": _bars(60)}
+    monkeypatch.setattr(cd, "history", fake_history)
+    pay = cd.build_chart_payload("nvda")
+    assert "1h" not in pay["resolutions"]
+    assert pay["default"] == "1d"
+
+
+def test_build_chart_payload_default_falls_back(monkeypatch):
+    def fake_history(t, p, m=None, interval="1d"):
+        if interval == "1d":
+            return {"error": "boom"}
+        return {"ticker": "NVDA", "period": p, "bars": _bars(60)}
+    monkeypatch.setattr(cd, "history", fake_history)
+    pay = cd.build_chart_payload("nvda")
+    assert pay["default"] in pay["resolutions"]
+    assert pay["default"] != "1d"
