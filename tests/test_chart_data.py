@@ -18,18 +18,23 @@ def _bars(n=60):
     return bars
 
 
-def test_series_shapes_and_no_nan():
+def test_indicator_series_are_full_length_with_whitespace_warmup():
     out = series_from_bars(_bars(60))
     assert len(out["candles"]) == 60
-    assert set(out["candles"][0]) == {"time", "open", "high", "low", "close"}
-    # indicator series drop warm-up NaNs, so they are shorter than candles
-    assert 0 < len(out["rsi"]) < 60
-    for pt in out["rsi"]:
-        assert set(pt) == {"time", "value"}
-        assert not math.isnan(pt["value"])
-    assert {"upper", "middle", "lower"} == set(out["bollinger"])
-    assert {"macd", "signal", "hist"} == set(out["macd"])
-    assert {"k", "d"} == set(out["stochastic"])
+    # every indicator series now has one point per bar (whitespace during warm-up)
+    assert len(out["rsi"]) == 60
+    assert len(out["bollinger"]["upper"]) == 60
+    assert len(out["macd"]["macd"]) == 60
+    assert len(out["stochastic"]["k"]) == 60
+    # warm-up points are whitespace: time only, no value
+    assert out["rsi"][0] == {"time": out["candles"][0]["time"]}
+    # later points carry a numeric value
+    valued = [p for p in out["rsi"] if "value" in p]
+    assert 0 < len(valued) < 60
+    for p in valued:
+        assert not math.isnan(p["value"])
+    # every point has a time, in the same order as candles
+    assert [p["time"] for p in out["rsi"]] == [c["time"] for c in out["candles"]]
 
 
 def test_support_resistance_present():

@@ -17,12 +17,15 @@ from tools.market import history  # noqa: E402
 
 
 def _line(dates, series):
-    """Zip dates with a pandas Series into [{time, value}], dropping NaN warm-up."""
+    """Zip dates with a pandas Series into one point per bar. Warm-up (NaN) bars
+    become whitespace points ({time} only) so every series shares the same time
+    domain as the candles — required for exact cross-pane axis sync."""
     out = []
     for d, v in zip(dates, series.tolist()):
         if v is None or (isinstance(v, float) and math.isnan(v)):
-            continue
-        out.append({"time": d, "value": round(float(v), 4)})
+            out.append({"time": d})
+        else:
+            out.append({"time": d, "value": round(float(v), 4)})
     return out
 
 
