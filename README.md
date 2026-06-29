@@ -55,6 +55,13 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 # Low-weight context only — patterns have weak, contested predictive power.
 ./.venv/bin/python tools/patterns.py NVDA
 
+# Interactive chart: zoomable/pannable candles + Bollinger/volume with
+# RSI/MACD/stochastic sub-panes. Self-contained HTML (TradingView lightweight-charts).
+# Live re-pull, or a frozen per-call snapshot. Charts are gitignored (local only).
+./.venv/bin/python tools/chart.py NVDA
+./.venv/bin/python tools/chart.py AIR --market NZX --period 2y
+./.venv/bin/python tools/chart.py META --snapshot --call-id 2026-06-28-001
+
 # Deep fundamentals: valuation (P/E, forward P/E, PEG), growth, margins, debt, FCF.
 ./.venv/bin/python tools/fundamentals.py NVDA
 
