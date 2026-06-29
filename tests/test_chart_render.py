@@ -98,6 +98,11 @@ def test_render_has_educational_tooltips():
     assert "mouseover" in html
 
 
+def test_render_omits_fundamentals_when_null():
+    html = render_chart_html(_payload())  # _payload has fundamentals: None
+    assert "Fundamentals (snapshot)" not in html
+
+
 def test_session_index_links_each_entry():
     html = render_session_index("2026-06-28", [
         {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},

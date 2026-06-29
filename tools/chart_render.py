@@ -53,6 +53,7 @@ _TEMPLATE = """<!doctype html>
   #tip{position:absolute;background:#1c1f2b;color:#d1d4dc;border:1px solid #2a2e39;
     border-radius:4px;padding:7px 10px;max-width:260px;font-size:11px;line-height:1.5;
     pointer-events:none;display:none;z-index:100;white-space:normal}
+  .label.hidden{display:none}
 </style></head><body>
 <div id="header"><span id="title">__TITLE__</span><span id="subtitle">__SUBTITLE__</span></div>
 <div id="timeframe">__TIMEFRAME__</div>
@@ -60,16 +61,17 @@ _TEMPLATE = """<!doctype html>
 <div id="charts-col">
 <div class="label">Price · Bollinger · Volume</div>
 <div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb">BB</span><span class="tog" data-toggle="vol">Vol</span></div></div>
-<div class="label">RSI (14)</div>
+<div class="label" data-label-for="rsi">RSI (14)</div>
 <div class="pane" id="rsi"><div class="tog-cluster"><span class="tog" data-toggle="rsi">RSI</span></div></div>
-<div class="label">MACD (12,26,9)</div>
+<div class="label" data-label-for="macd">MACD (12,26,9)</div>
 <div class="pane" id="macd"><div class="tog-cluster"><span class="tog" data-toggle="macd">MACD</span></div></div>
-<div class="label">Stochastic (14,3)</div>
+<div class="label" data-label-for="stoch">Stochastic (14,3)</div>
 <div class="pane" id="stoch"><div class="tog-cluster"><span class="tog" data-toggle="stoch">STOCH</span></div></div>
 </div>
 <div id="panel"><h3>Info</h3><div id="panel-body">Loading…</div></div>
 </div>
 <div id="legend">__LEGEND__</div>
+<div id="tip"></div>
 <script>
 const DATA = __DATA__;
 const LWC = LightweightCharts;
@@ -174,31 +176,6 @@ function lastDefinedInRange(arr,fromIdx,toIdx){
   return null;
 }
 
-function fundBlock(){
-  const f = DATA.fundamentals;
-  if(!f) return '';
-  const v = f.valuation||{}, g = f.growth||{}, p = f.profitability||{};
-  function fRow(label,val,reading,tipKey){
-    const vStr = val==null?'—':(typeof val==='number'?fmt(val):val);
-    const rStr = reading?`<span class="read">${reading}</span>`:'';
-    const tipAttr = tipKey?` data-tip="${tipKey}"`:'';
-    return `<div class="row"${tipAttr}><span class="key">${label}</span><span class="val">${vStr}</span>${rStr}</div>`;
-  }
-  const peStr = v.trailing_pe!=null?fmt(v.trailing_pe):null;
-  const fpeStr = v.forward_pe!=null?fmt(v.forward_pe):null;
-  const pegStr = v.peg!=null?fmt(v.peg):null;
-  const mrgStr = p.profit_margin_pct!=null?fmt(p.profit_margin_pct,1)+'%':null;
-  const revStr = g.revenue_growth_pct!=null?fmt(g.revenue_growth_pct,1)+'%':null;
-  return `<div class="sep"></div>
-<h3>Fundamentals (snapshot)</h3>
-<div class="row"><span class="key">${f.name||'—'}</span><span class="val">${f.sector||'—'}</span></div>
-${fRow('P/E',peStr,v.reading,'pe')}
-${fRow('Forward P/E',fpeStr,null,'forwardpe')}
-${fRow('PEG',pegStr,null,'peg')}
-${fRow('Margin',mrgStr,p.reading,'margin')}
-${fRow('Rev growth',revStr,g.reading,'growth')}`;
-}
-
 function updateSummaryPanel(){
   const res = _currentRes;
   if(!res) return;
@@ -252,7 +229,7 @@ function updateSummaryPanel(){
 <div class="row" data-tip="change"><span class="key">Change</span><span class="val ${cls(chg)}">${chg>=0?'+':''}${fmt(chg,2)}%</span></div>
 <div class="row" data-tip="fromhigh"><span class="key">% below high</span><span class="val">${pctBelowHigh!=null?fmt(pctBelowHigh,1)+'%':'—'}</span></div>
 <div class="row" data-tip="volume"><span class="key">Vol/AvgVol</span><span class="val">${volRatio!=null?fmt(volRatio,2)+'×':'—'}</span></div>
-<div class="row" data-tip="atr"><span class="key">ATR</span><span class="val">${fmt(atrV)} (${atrPct!=null?fmt(atrPct,1)+'%':'—'})</span></div>
+<div class="row" data-tip="atr"><span class="key">ATR</span><span class="val">${atrV!=null ? `${fmt(atrV)} (${atrPct!=null?fmt(atrPct,1)+'%':'—'})` : '—'}</span></div>
 <div class="sep"></div>
 <div class="row" data-tip="rsi"><span class="key">RSI</span><span class="val">${fmt(rsiV)}</span><span class="read">${rsiRead(rsiV)}</span></div>
 <div class="row" data-tip="macd"><span class="key">MACD</span><span class="val">${fmt(macdV)}</span><span class="read ${cls(histV)}">${macdRead(histV)}</span></div>
@@ -268,7 +245,7 @@ function updateSummaryPanel(){
 <div class="row"><span class="key">→ Support</span><span class="val ${distS!=null?cls(distS):''}">${distS!=null?(distS>=0?'+':'')+fmt(distS,1)+'%':'—'}</span></div>
 <div class="row"><span class="key">→ Resist</span><span class="val ${distR!=null?cls(distR):''}">${distR!=null?(distR>=0?'+':'')+fmt(distR,1)+'%':'—'}</span></div>
 <div class="row"><span class="key">Call</span><span class="val">${call}</span></div>
-${fundBlock()}
+__FUND_BLOCK__
 <div class="note">Context for timing — not financial advice.</div>`;
 }
 
@@ -312,7 +289,7 @@ function showHoverPanel(time){
 <div class="row" data-tip="bollinger"><span class="key">BB</span><span class="read">${bbR}</span></div>
 <div class="row"><span class="key">BB U/M/L</span><span class="val">${fmt(bbUV)}/${fmt(bbMV)}/${fmt(bbLV)}</span></div>
 <div class="row" data-tip="percentb"><span class="key">%B</span><span class="val">${bbPctB!=null?fmt(bbPctB,2):'—'}</span></div>
-${fundBlock()}
+__FUND_BLOCK__
 <div class="note">Context for timing — not financial advice.</div>`;
 }
 
@@ -338,6 +315,7 @@ allPaneEntries.forEach(entry => {
         if(dst === entry.chart) return;
         const v = map().get(param.time);
         if(v!=null){ try{ dst.setCrosshairPosition(v,param.time,ds); }catch(e){} }
+        else { try{ dst.clearCrosshairPosition(); }catch(e){} }
       });
     } else {
       updateSummaryPanel();
@@ -368,6 +346,8 @@ document.querySelectorAll('.tog').forEach(chip => {
       const nowCollapsed = paneEl.classList.toggle('collapsed');
       paneState[t] = !nowCollapsed;
       chip.classList.toggle('off', nowCollapsed);
+      const labelEl = document.querySelector(`[data-label-for="${t}"]`);
+      if(labelEl) labelEl.classList.toggle('hidden', nowCollapsed);
       visibleCharts().forEach(c => c.timeScale().fitContent());
     }
   });
@@ -437,19 +417,19 @@ document.getElementById('panel').addEventListener('mouseover', e => {
   tipEl.textContent = TIPS[key];
   tipEl.style.display = 'block';
   const vw = window.innerWidth, vh = window.innerHeight;
-  let x = e.clientX + 12, y = e.clientY + 12;
-  if(x + 270 > vw) x = e.clientX - 270;
-  if(y + tipEl.offsetHeight + 10 > vh) y = e.clientY - tipEl.offsetHeight - 8;
+  let x = e.pageX + 12, y = e.pageY + 12;
+  if(e.clientX + 270 > vw) x = e.pageX - 270;
+  if(e.clientY + tipEl.offsetHeight + 10 > vh) y = e.pageY - tipEl.offsetHeight - 8;
   tipEl.style.left = x + 'px';
   tipEl.style.top  = y + 'px';
 });
 document.getElementById('panel').addEventListener('mouseout', e => {
   const row = e.target.closest('[data-tip]');
   if(!row) return;
+  if(row.contains(e.relatedTarget)) return;
   tipEl.style.display = 'none';
 });
 </script>
-<div id="tip"></div>
 </body></html>"""
 
 _LEGEND = (
@@ -462,6 +442,57 @@ _LEGEND = (
     "Dashed <b>S/R</b> lines = nearest support/resistance. "
     "Context for timing — not a buy/sell trigger. Not financial advice."
 )
+
+
+def _make_fund_block_html(f):
+    """Generate the fundamentals sidebar HTML block on the Python side.
+
+    Returns an empty string when *f* is None/falsy so the rendered HTML never
+    contains the 'Fundamentals (snapshot)' heading when data is absent.
+    """
+    if not f:
+        return ''
+
+    v = f.get('valuation') or {}
+    g = f.get('growth') or {}
+    p = f.get('profitability') or {}
+
+    def _fmt(val, dec=2):
+        if val is None:
+            return '—'  # —
+        return f'{val:.{dec}f}'
+
+    def frow(label, val, reading=None, tip_key=None):
+        v_str = '—' if val is None else val
+        r_str = f'<span class="read">{reading}</span>' if reading else ''
+        tip_attr = f' data-tip="{tip_key}"' if tip_key else ''
+        return (
+            f'<div class="row"{tip_attr}>'
+            f'<span class="key">{label}</span>'
+            f'<span class="val">{v_str}</span>'
+            f'{r_str}</div>'
+        )
+
+    pe = v.get('trailing_pe')
+    fpe = v.get('forward_pe')
+    peg = v.get('peg')
+    mrg = p.get('profit_margin_pct')
+    rev = g.get('revenue_growth_pct')
+
+    name = f.get('name') or '—'
+    sector = f.get('sector') or '—'
+
+    lines = [
+        '<div class="sep"></div>',
+        '<h3>Fundamentals (snapshot)</h3>',
+        f'<div class="row"><span class="key">{name}</span><span class="val">{sector}</span></div>',
+        frow('P/E', _fmt(pe) if pe is not None else None, v.get('reading'), 'pe'),
+        frow('Forward P/E', _fmt(fpe) if fpe is not None else None, None, 'forwardpe'),
+        frow('PEG', _fmt(peg) if peg is not None else None, None, 'peg'),
+        frow('Margin', (_fmt(mrg, 1) + '%') if mrg is not None else None, p.get('reading'), 'margin'),
+        frow('Rev growth', (_fmt(rev, 1) + '%') if rev is not None else None, g.get('reading'), 'growth'),
+    ]
+    return '\n'.join(lines)
 
 
 def render_chart_html(payload, meta=None):
@@ -487,6 +518,8 @@ def render_chart_html(payload, meta=None):
         for r in _RES_ORDER if r in resolutions
     )
 
+    fund_block_html = _make_fund_block_html(payload.get("fundamentals"))
+
     return (
         _TEMPLATE
         .replace("__CDN__", CDN)
@@ -495,6 +528,7 @@ def render_chart_html(payload, meta=None):
         .replace("__LEGEND__", _LEGEND)
         .replace("__TIMEFRAME__", timeframe_html)
         .replace("__DATA__", json.dumps(payload))
+        .replace("__FUND_BLOCK__", fund_block_html)
     )
 
 
