@@ -113,3 +113,11 @@ def test_build_chart_payload_default_falls_back(monkeypatch):
     pay = cd.build_chart_payload("nvda")
     assert pay["default"] in pay["resolutions"]
     assert pay["default"] != "1d"
+
+
+def test_series_includes_atr_full_length():
+    out = series_from_bars(_bars(60))
+    assert "atr" in out
+    assert len(out["atr"]) == 60
+    assert [p["time"] for p in out["atr"]] == [c["time"] for c in out["candles"]]
+    assert any("value" in p for p in out["atr"])

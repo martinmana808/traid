@@ -11,7 +11,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.indicators import rsi, macd, bollinger, stochastic  # noqa: E402
+from tools.indicators import rsi, macd, bollinger, stochastic, atr  # noqa: E402
 from tools.patterns import support_resistance  # noqa: E402
 from tools.market import history, normalize_ticker  # noqa: E402
 
@@ -46,6 +46,7 @@ def series_from_bars(bars):
     up, mid, lo_band = bollinger(closes)
     macd_line, signal_line, hist = macd(closes)
     k_series, d_series = stochastic(highs, lows, closes)
+    atr_series = atr(highs, lows, closes)
 
     price = round(float(closes[-1]), 2)
     sr = support_resistance(highs, lows, price)
@@ -65,6 +66,7 @@ def series_from_bars(bars):
             "hist": _line(dates, hist),
         },
         "stochastic": {"k": _line(dates, k_series), "d": _line(dates, d_series)},
+        "atr": _line(dates, atr_series),
         "support": sr["support"],
         "resistance": sr["resistance"],
     }
