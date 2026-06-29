@@ -63,7 +63,7 @@ def test_render_has_panel_and_crosshair_link():
 def test_render_has_dividers_and_full_height():
     html = render_chart_html(_payload())
     assert "border-top: 1px solid #c8ccd4" in html   # pane dividers
-    assert "100vh" in html                            # fills viewport height
+    assert "100dvh" in html                           # fills the dynamic viewport height
 
 
 def test_session_index_links_each_entry():

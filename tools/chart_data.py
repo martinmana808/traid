@@ -70,7 +70,7 @@ def series_from_bars(bars):
     }
 
 
-RESOLUTIONS = [("1h", "3mo"), ("1d", "1y"), ("1wk", "5y"), ("1mo", "max")]
+RESOLUTIONS = [("1h", "3mo"), ("1d", "5y"), ("1wk", "max"), ("1mo", "max")]
 
 
 def build_chart_payload(ticker, market=None, period=None):

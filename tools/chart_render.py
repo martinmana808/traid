@@ -16,7 +16,8 @@ _TEMPLATE = """<!doctype html>
 <title>__TITLE__ — TRaid</title>
 <script src="__CDN__"></script>
 <style>
-  html,body{margin:0;background:#0e0e12;color:#d1d4dc;font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif}
+  html,body{margin:0;height:100dvh;background:#0e0e12;color:#d1d4dc;font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif}
+  body{display:flex;flex-direction:column;overflow:hidden}
   #header{padding:10px 14px;border-bottom:1px solid #1c1f2b}
   #title{font-weight:600;font-size:15px}
   #subtitle{color:#9aa0ad;margin-left:8px}
@@ -29,7 +30,7 @@ _TEMPLATE = """<!doctype html>
   #timeframe button.active{background:#2a2e39;color:#d1d4dc;border-color:#5b8def}
   #legend{padding:10px 14px;color:#787b86;border-top:1px solid #1c1f2b}
   #legend b{color:#9aa0ad}
-  #layout{display:flex;flex-direction:row;min-height:100vh}
+  #layout{display:flex;flex-direction:row;flex:1;min-height:0}
   #charts-col{flex:1;min-width:0;display:flex;flex-direction:column}
   #price{flex:3;min-height:220px}
   #rsi,#macd,#stoch{flex:1;min-height:90px}
