@@ -37,3 +37,30 @@ def test_support_resistance_present():
     assert isinstance(out["support"], float)
     assert isinstance(out["resistance"], float)
     assert out["support"] <= out["resistance"]
+
+
+import tools.chart_data as cd
+
+
+def test_build_chart_data_uses_market_history(monkeypatch):
+    fake = {"ticker": "TEST", "period": "1y",
+            "bars": _bars(60)}
+    monkeypatch.setattr(cd, "history", lambda t, p, m=None: fake)
+    out = cd.build_chart_data("test", period="1y")
+    assert out["ticker"] == "TEST"
+    assert out["as_of"] == fake["bars"][-1]["date"]
+    assert out["price"] == round(fake["bars"][-1]["close"], 2)
+    assert "candles" in out and len(out["candles"]) == 60
+
+
+def test_build_chart_data_propagates_error(monkeypatch):
+    monkeypatch.setattr(cd, "history", lambda t, p, m=None: {"error": "boom"})
+    out = cd.build_chart_data("nope")
+    assert out["error"] == "boom"
+
+
+def test_build_chart_data_rejects_short_history(monkeypatch):
+    monkeypatch.setattr(cd, "history",
+                        lambda t, p, m=None: {"ticker": "X", "period": p, "bars": _bars(10)})
+    out = cd.build_chart_data("x")
+    assert "error" in out

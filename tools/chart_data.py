@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tools.indicators import rsi, macd, bollinger, stochastic  # noqa: E402
 from tools.patterns import support_resistance  # noqa: E402
+from tools.market import history  # noqa: E402
 
 
 def _line(dates, series):
@@ -63,4 +64,21 @@ def series_from_bars(bars):
         "stochastic": {"k": _line(dates, k_series), "d": _line(dates, d_series)},
         "support": sr["support"],
         "resistance": sr["resistance"],
+    }
+
+
+def build_chart_data(ticker, market=None, period="1y"):
+    raw = history(ticker, period, market)
+    if "error" in raw:
+        return raw
+    bars = raw.get("bars") or []
+    if len(bars) < 30:
+        return {"error": f"chart: not enough history for {raw.get('ticker', ticker)} ({period})"}
+    series = series_from_bars(bars)
+    return {
+        "ticker": raw.get("ticker", ticker),
+        "period": period,
+        "as_of": bars[-1]["date"],
+        "price": round(float(bars[-1]["close"]), 2),
+        **series,
     }
