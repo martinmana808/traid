@@ -77,9 +77,20 @@ def main(argv=None):
     p.add_argument("--snapshot", action="store_true",
                    help="save a frozen per-call snapshot under charts/sessions/<date>/")
     p.add_argument("--call-id", default=None, help="ledger call id to tag a snapshot")
+    p.add_argument("--call", default=None, help="TRaid call (buy/hold/trim/etc.) to show in the title")
+    p.add_argument("--confidence", default=None, help="confidence (low/medium/high) to show in the title")
+    p.add_argument("--call-date", default=None, help="date of the call to show in the title")
     args = p.parse_args(argv)
+    call_meta = {}
+    if args.call:
+        call_meta["call"] = args.call
+    if args.confidence:
+        call_meta["confidence"] = args.confidence
+    if args.call_date:
+        call_meta["call_date"] = args.call_date
     result = generate_chart(args.ticker, args.market, args.period,
-                            snapshot=args.snapshot, call_id=args.call_id)
+                            snapshot=args.snapshot, call_id=args.call_id,
+                            call_meta=call_meta or None)
     if isinstance(result, dict) and "error" in result:
         print(json.dumps(result, indent=2))
     else:

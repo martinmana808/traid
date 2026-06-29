@@ -71,11 +71,14 @@ kS.createPriceLine({price:80,color:'#ef5350',lineStyle:2,title:'80'});
 kS.createPriceLine({price:20,color:'#26a69a',lineStyle:2,title:'20'});
 
 const charts=[price,rsi,macd,stoch];let syncing=false;
-charts.forEach(src=>src.timeScale().subscribeVisibleLogicalRangeChange(range=>{
-  if(syncing||!range)return;syncing=true;
-  charts.forEach(dst=>{if(dst!==src)dst.timeScale().setVisibleLogicalRange(range);});
+charts.forEach(c=>c.timeScale().fitContent());
+const r0=price.timeScale().getVisibleRange();
+if(r0){charts.forEach(c=>{if(c!==price){try{c.timeScale().setVisibleRange(r0);}catch(e){}}});}
+charts.forEach(src=>src.timeScale().subscribeVisibleTimeRangeChange(()=>{
+  if(syncing)return;const r=src.timeScale().getVisibleRange();if(!r)return;
+  syncing=true;
+  charts.forEach(dst=>{if(dst!==src){try{dst.timeScale().setVisibleRange(r);}catch(e){}}});
   syncing=false;}));
-price.timeScale().fitContent();
 </script></body></html>"""
 
 _LEGEND = (

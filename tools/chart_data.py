@@ -72,6 +72,9 @@ def build_chart_data(ticker, market=None, period="1y"):
     if "error" in raw:
         return raw
     bars = raw.get("bars") or []
+    bars = [b for b in bars
+            if all(isinstance(b.get(k), (int, float)) and math.isfinite(b[k])
+                   for k in ("open", "high", "low", "close"))]
     if len(bars) < 30:
         return {"error": f"chart: not enough history for {raw.get('ticker', ticker)} ({period})"}
     series = series_from_bars(bars)

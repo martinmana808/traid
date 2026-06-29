@@ -64,3 +64,13 @@ def test_build_chart_data_rejects_short_history(monkeypatch):
                         lambda t, p, m=None: {"ticker": "X", "period": p, "bars": _bars(10)})
     out = cd.build_chart_data("x")
     assert "error" in out
+
+
+def test_build_chart_data_drops_nan_bars(monkeypatch):
+    bars = _bars(60)
+    bars[5]["close"] = float("nan")
+    bars[6]["open"] = float("nan")
+    monkeypatch.setattr(cd, "history", lambda t, p, m=None: {"ticker": "X", "period": p, "bars": bars})
+    out = cd.build_chart_data("x")
+    assert "error" not in out
+    assert len(out["candles"]) == 58  # two NaN bars dropped
