@@ -443,9 +443,12 @@ loadResolution(DATA.default);
 (function(){
   const priceEl = document.getElementById('price');
   priceEl.addEventListener('mousedown', function(e){
+    if(e.target.closest('.tog')) return;  // indicator toggle chip — don't touch selection
     if(e.shiftKey){
       dragging = true;
       dragStartX = e.clientX - priceEl.getBoundingClientRect().left;
+      // suppress the chart's own pressed-mouse pan so the drag only selects
+      price.applyOptions({handleScroll:{pressedMouseMove:false}, handleScale:{axisPressedMouseMove:false}});
       e.preventDefault();
     } else {
       clearSelection();
@@ -470,6 +473,8 @@ loadResolution(DATA.default);
     const curX = e.clientX - rect.left;
     const dist = Math.abs(curX - dragStartX);
     dragging = false;
+    // restore the chart's normal pan/scale after the selection drag
+    price.applyOptions({handleScroll:{pressedMouseMove:true}, handleScale:{axisPressedMouseMove:true}});
     if(dist < 3){
       clearSelection();
     } else {
