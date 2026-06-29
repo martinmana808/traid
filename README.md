@@ -59,7 +59,9 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 # RSI/MACD/stochastic sub-panes. Self-contained HTML (TradingView lightweight-charts).
 # Linked panes (x-axis zoom/pan sync), synced crosshair across all 4 panes, right panel
 # showing visible-range summary (or hovered candle), and 1H/1D/1W/1M timeframe toggle buttons.
-# Live re-pull, or a frozen per-call snapshot. Charts are gitignored (local only).
+# Per-graph indicator toggles (BB/Vol chips, collapse chips for RSI/MACD/Stochastic),
+# richer side panel with fundamentals snapshot (P/E, PEG, margin, growth) plus volatility/range stats,
+# and educational hover-tooltips on each metric. Live re-pull, or a frozen per-call snapshot. Charts are gitignored (local only).
 ./.venv/bin/python tools/chart.py NVDA
 ./.venv/bin/python tools/chart.py AIR --market NZX --period 2y
 ./.venv/bin/python tools/chart.py META --snapshot --call-id 2026-06-28-001
