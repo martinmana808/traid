@@ -57,6 +57,8 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 
 # Interactive chart: zoomable/pannable candles + Bollinger/volume with
 # RSI/MACD/stochastic sub-panes. Self-contained HTML (TradingView lightweight-charts).
+# Linked panes (x-axis zoom/pan sync), synced crosshair across all 4 panes, right panel
+# showing visible-range summary (or hovered candle), and 1H/1D/1W/1M timeframe toggle buttons.
 # Live re-pull, or a frozen per-call snapshot. Charts are gitignored (local only).
 ./.venv/bin/python tools/chart.py NVDA
 ./.venv/bin/python tools/chart.py AIR --market NZX --period 2y
