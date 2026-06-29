@@ -45,7 +45,7 @@ _TEMPLATE = """<!doctype html>
   #panel .row{display:flex;justify-content:space-between;margin:2px 0}
   #panel .key{color:#787b86}
   #panel .val{color:#d1d4dc;font-weight:600}
-  #panel .read{color:#e0a73e;font-size:11px}
+  #panel .read{display:block;color:#e0a73e;font-size:11px;white-space:normal;margin:1px 0 4px}
   #panel .sep{border-top:1px solid #1c1f2b;margin:8px 0}
   #panel .note{color:#787b86;font-size:11px;margin-top:8px}
   #panel .bull{color:#26a69a}
@@ -462,16 +462,25 @@ def _make_fund_block_html(f):
             return '—'  # —
         return f'{val:.{dec}f}'
 
+    def _strip_prefix(reading):
+        """Strip redundant 'label value — ' prefix from a reading string."""
+        if reading and ' — ' in reading:
+            return reading.split(' — ', 1)[1]
+        return reading
+
     def frow(label, val, reading=None, tip_key=None):
         v_str = '—' if val is None else val
-        r_str = f'<span class="read">{reading}</span>' if reading else ''
         tip_attr = f' data-tip="{tip_key}"' if tip_key else ''
-        return (
+        row = (
             f'<div class="row"{tip_attr}>'
             f'<span class="key">{label}</span>'
             f'<span class="val">{v_str}</span>'
-            f'{r_str}</div>'
+            f'</div>'
         )
+        if reading:
+            tail = _strip_prefix(reading)
+            row += f'\n<div class="read">{tail}</div>'
+        return row
 
     pe = v.get('trailing_pe')
     fpe = v.get('forward_pe')

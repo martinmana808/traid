@@ -103,6 +103,21 @@ def test_render_omits_fundamentals_when_null():
     assert "Fundamentals (snapshot)" not in html
 
 
+def test_fundamentals_reading_on_own_line():
+    pay = _payload()
+    pay["fundamentals"] = {"name": "NVIDIA", "sector": "Tech",
+                           "valuation": {"trailing_pe": 29.48, "forward_pe": 15.13, "peg": 0.59,
+                                         "reading": "P/E 29.48 — elevated (priced for growth)"},
+                           "growth": {"revenue_growth_pct": 85.2, "reading": "85.2% — strong"},
+                           "profitability": {"profit_margin_pct": 63.0, "reading": "63.0% — high (strong pricing power)"}}
+    html = render_chart_html(pay)
+    # the reading is rendered in a block-level .read element (own line), and the
+    # redundant leading "P/E 29.48 — " prefix is not duplicated inline with the value
+    assert "elevated (priced for growth)" in html
+    assert 'class="read"' in html
+    assert "white-space:normal" in html
+
+
 def test_session_index_links_each_entry():
     html = render_session_index("2026-06-28", [
         {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},
