@@ -121,3 +121,22 @@ def test_series_includes_atr_full_length():
     assert len(out["atr"]) == 60
     assert [p["time"] for p in out["atr"]] == [c["time"] for c in out["candles"]]
     assert any("value" in p for p in out["atr"])
+
+
+def test_payload_embeds_fundamentals(monkeypatch):
+    def fake_history(t, p, m=None, interval="1d"):
+        return {"ticker": "NVDA", "period": p, "bars": _bars(60)}
+    monkeypatch.setattr(cd, "history", fake_history)
+    monkeypatch.setattr(cd, "fundamentals_analyze",
+                        lambda t, m=None: {"name": "NVIDIA", "valuation": {"peg": 0.7}})
+    pay = cd.build_chart_payload("nvda")
+    assert pay["fundamentals"]["valuation"]["peg"] == 0.7
+
+
+def test_payload_fundamentals_none_on_error(monkeypatch):
+    def fake_history(t, p, m=None, interval="1d"):
+        return {"ticker": "NVDA", "period": p, "bars": _bars(60)}
+    monkeypatch.setattr(cd, "history", fake_history)
+    monkeypatch.setattr(cd, "fundamentals_analyze", lambda t, m=None: {"error": "no data"})
+    pay = cd.build_chart_payload("nvda")
+    assert pay["fundamentals"] is None

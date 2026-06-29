@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tools.indicators import rsi, macd, bollinger, stochastic, atr  # noqa: E402
 from tools.patterns import support_resistance  # noqa: E402
 from tools.market import history, normalize_ticker  # noqa: E402
+from tools.fundamentals import analyze as fundamentals_analyze  # noqa: E402
 
 
 def _line(dates, series):
@@ -99,8 +100,13 @@ def build_chart_payload(ticker, market=None, period=None):
     for r in resolutions.values():
         r.pop("_bars_last_close", None)
         r.pop("_bars_last_date", None)
+    try:
+        f = fundamentals_analyze(ticker, market)
+    except Exception:  # noqa: BLE001 — fundamentals are optional, never fatal
+        f = None
+    fundamentals = None if (not f or "error" in f) else f
     return {"ticker": sym, "as_of": as_of, "price": price,
-            "default": default, "resolutions": resolutions}
+            "default": default, "resolutions": resolutions, "fundamentals": fundamentals}
 
 
 def build_chart_data(ticker, market=None, period="1y"):
