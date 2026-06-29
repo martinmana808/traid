@@ -23,7 +23,12 @@ _TEMPLATE = """<!doctype html>
   #subtitle{color:#9aa0ad;margin-left:8px}
   .label{padding:2px 14px;color:#787b86;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
   .pane + .label{border-top: 1px solid #c8ccd4;padding-top:4px}
-  .pane{width:100%;min-height:0}
+  .pane{width:100%;min-height:0;position:relative}
+  .pane.collapsed{flex:0 0 0;min-height:0;height:0;overflow:hidden}
+  .tog-cluster{position:absolute;top:4px;left:4px;z-index:5;display:flex;gap:4px}
+  .tog{background:#1c1f2b;color:#9aa0ad;border:1px solid #2a2e39;border-radius:3px;
+    padding:2px 6px;cursor:pointer;font-size:11px;user-select:none}
+  .tog.off{color:#454851;border-color:#1c1f2b}
   #timeframe{padding:6px 14px;display:flex;gap:6px;border-bottom:1px solid #1c1f2b}
   #timeframe button{background:#1c1f2b;color:#9aa0ad;border:1px solid #2a2e39;border-radius:4px;
     padding:3px 10px;cursor:pointer;font-size:12px}
@@ -50,10 +55,14 @@ _TEMPLATE = """<!doctype html>
 <div id="timeframe">__TIMEFRAME__</div>
 <div id="layout">
 <div id="charts-col">
-<div class="label">Price · Bollinger · Volume</div><div class="pane" id="price"></div>
-<div class="label">RSI (14)</div><div class="pane" id="rsi"></div>
-<div class="label">MACD (12,26,9)</div><div class="pane" id="macd"></div>
-<div class="label">Stochastic (14,3)</div><div class="pane" id="stoch"></div>
+<div class="label">Price · Bollinger · Volume</div>
+<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb">BB</span><span class="tog" data-toggle="vol">Vol</span></div></div>
+<div class="label">RSI (14)</div>
+<div class="pane" id="rsi"><div class="tog-cluster"><span class="tog" data-toggle="rsi">RSI</span></div></div>
+<div class="label">MACD (12,26,9)</div>
+<div class="pane" id="macd"><div class="tog-cluster"><span class="tog" data-toggle="macd">MACD</span></div></div>
+<div class="label">Stochastic (14,3)</div>
+<div class="pane" id="stoch"><div class="tog-cluster"><span class="tog" data-toggle="stoch">STOCH</span></div></div>
 </div>
 <div id="panel"><h3>Info</h3><div id="panel-body">Loading…</div></div>
 </div>
@@ -98,13 +107,23 @@ const dS = stoch.addLineSeries({color:'#e0a73e',lineWidth:1});
 kS.createPriceLine({price:80,color:'#ef5350',lineStyle:2,title:'80'});
 kS.createPriceLine({price:20,color:'#26a69a',lineStyle:2,title:'20'});
 
-const charts = [price,rsiC,macdC,stoch];
+// Per-pane on/off state (price is always on)
+const paneState = {rsi:true, macd:true, stoch:true};
+function visibleCharts(){
+  const active = [price];
+  if(paneState.rsi)  active.push(rsiC);
+  if(paneState.macd) active.push(macdC);
+  if(paneState.stoch) active.push(stoch);
+  return active;
+}
+
 let syncing = false;
-charts.forEach(src => src.timeScale().subscribeVisibleLogicalRangeChange(range => {
+// Subscribe all 4 charts; handlers use visibleCharts() to avoid touching collapsed panes
+[price,rsiC,macdC,stoch].forEach(src => src.timeScale().subscribeVisibleLogicalRangeChange(range => {
   if(syncing) return;
   if(!range) return;
   syncing = true;
-  charts.forEach(dst => {
+  visibleCharts().forEach(dst => {
     if(dst !== src){ try{ dst.timeScale().setVisibleLogicalRange(range); }catch(e){} }
   });
   syncing = false;
@@ -242,31 +261,58 @@ function showHoverPanel(time){
 
 // Linked crosshair
 let chsyncing = false;
-const paneEntries = [
-  {chart: price,  series: candles,  map: ()=>_resMaps.candle},
-  {chart: rsiC,   series: rsiS,     map: ()=>_resMaps.rsi},
-  {chart: macdC,  series: macdLine, map: ()=>_resMaps.macdLine},
-  {chart: stoch,  series: kS,       map: ()=>_resMaps.k},
+const allPaneEntries = [
+  {chart: price,  series: candles,  map: ()=>_resMaps.candle,   pane:'price'},
+  {chart: rsiC,   series: rsiS,     map: ()=>_resMaps.rsi,      pane:'rsi'},
+  {chart: macdC,  series: macdLine, map: ()=>_resMaps.macdLine, pane:'macd'},
+  {chart: stoch,  series: kS,       map: ()=>_resMaps.k,        pane:'stoch'},
 ];
-paneEntries.forEach(({chart,series},i) => {
-  chart.subscribeCrosshairMove(param => {
+function activePaneEntries(){
+  return allPaneEntries.filter(e => e.pane==='price' || paneState[e.pane]);
+}
+allPaneEntries.forEach(entry => {
+  entry.chart.subscribeCrosshairMove(param => {
     if(chsyncing) return;
     chsyncing = true;
+    const active = activePaneEntries();
     if(param && param.time){
       showHoverPanel(param.time);
-      paneEntries.forEach(({chart:dst,series:ds,map},j) => {
-        if(j===i) return;
+      active.forEach(({chart:dst,series:ds,map}) => {
+        if(dst === entry.chart) return;
         const v = map().get(param.time);
         if(v!=null){ try{ dst.setCrosshairPosition(v,param.time,ds); }catch(e){} }
       });
     } else {
       updateSummaryPanel();
-      paneEntries.forEach(({chart:dst},j) => {
-        if(j===i) return;
+      active.forEach(({chart:dst}) => {
+        if(dst === entry.chart) return;
         try{ dst.clearCrosshairPosition(); }catch(e){}
       });
     }
     chsyncing = false;
+  });
+});
+
+// Indicator toggle chips
+document.querySelectorAll('.tog').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const t = chip.dataset.toggle;
+    if(t === 'bb'){
+      chip.classList.toggle('off');
+      const on = !chip.classList.contains('off');
+      [bbU,bbM,bbL].forEach(s => s.applyOptions({visible:on}));
+    } else if(t === 'vol'){
+      chip.classList.toggle('off');
+      const on = !chip.classList.contains('off');
+      vol.applyOptions({visible:on});
+    } else {
+      // sub-pane collapse toggle (rsi / macd / stoch)
+      const paneEl = document.getElementById(t);
+      const nowCollapsed = paneEl.classList.toggle('collapsed');
+      paneState[t] = !nowCollapsed;
+      chip.classList.toggle('off', nowCollapsed);
+      visibleCharts().forEach(c => c.timeScale().fitContent());
+    }
   });
 });
 
@@ -292,7 +338,7 @@ function loadResolution(res){
     lineWidth:1,lineStyle:2,axisLabelVisible:true,title:'S '+d.support})); }
   if(d.resistance != null){ srLines.push(candles.createPriceLine({price:d.resistance,color:'#ef5350',
     lineWidth:1,lineStyle:2,axisLabelVisible:true,title:'R '+d.resistance})); }
-  charts.forEach(c => c.timeScale().fitContent());
+  visibleCharts().forEach(c => c.timeScale().fitContent());
   updateSummaryPanel();
 }
 

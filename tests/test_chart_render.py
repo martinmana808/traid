@@ -66,6 +66,14 @@ def test_render_has_dividers_and_full_height():
     assert "100dvh" in html                           # fills the dynamic viewport height
 
 
+def test_render_has_indicator_toggles():
+    html = render_chart_html(_payload())
+    for t in ("bb", "vol", "rsi", "macd", "stoch"):
+        assert f'data-toggle="{t}"' in html
+    assert "applyOptions" in html        # overlay show/hide
+    assert "collapsed" in html           # sub-pane collapse class
+
+
 def test_session_index_links_each_entry():
     html = render_session_index("2026-06-28", [
         {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},
