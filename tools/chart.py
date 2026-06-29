@@ -20,7 +20,7 @@ import webbrowser
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.chart_data import build_chart_data  # noqa: E402
+from tools.chart_data import build_chart_payload  # noqa: E402
 from tools.chart_render import render_chart_html, render_session_index  # noqa: E402
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,7 +48,7 @@ def _update_session_index(session_dir, date):
 def generate_chart(ticker, market=None, period="1y", snapshot=False,
                    call_id=None, call_meta=None, charts_root=None, open_browser=True):
     charts_root = charts_root or os.path.join(_ROOT, "charts")
-    data = build_chart_data(ticker, market, period)
+    data = build_chart_payload(ticker, market, period)
     if "error" in data:
         return data
     sym = data["ticker"]
