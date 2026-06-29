@@ -113,3 +113,29 @@ def render_chart_html(chart_data, meta=None):
         .replace("__LEGEND__", _LEGEND)
         .replace("__DATA__", json.dumps(chart_data))
     )
+
+
+def render_session_index(date, entries):
+    rows = []
+    for e in entries:
+        label = e["ticker"]
+        if e.get("call"):
+            label += f' <span style="color:#787b86">— {e["call"]}</span>'
+        rows.append(f'<li><a href="{e["filename"]}">{label}</a></li>')
+    items = "\n".join(rows)
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>TRaid charts — {date}</title>
+<style>
+ html,body{{margin:0;background:#0e0e12;color:#d1d4dc;font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif}}
+ h1{{font-size:16px;padding:14px;border-bottom:1px solid #1c1f2b;margin:0}}
+ ul{{list-style:none;padding:14px;margin:0}} li{{padding:6px 0}}
+ a{{color:#5b8def;text-decoration:none}} a:hover{{text-decoration:underline}}
+ .note{{padding:0 14px 14px;color:#787b86;font-size:12px}}
+</style></head><body>
+<h1>TRaid charts — session {date}</h1>
+<ul>
+{items}
+</ul>
+<div class="note">Decision-support, not financial advice.</div>
+</body></html>"""

@@ -1,5 +1,5 @@
 import json
-from tools.chart_render import render_chart_html
+from tools.chart_render import render_chart_html, render_session_index
 
 
 def _data():
@@ -40,3 +40,15 @@ def test_embedded_json_roundtrips():
     parsed = json.loads(html[start:end])
     assert parsed["ticker"] == "NVDA"
     assert parsed["support"] == 190.0
+
+
+def test_session_index_links_each_entry():
+    html = render_session_index("2026-06-28", [
+        {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},
+        {"ticker": "VT", "call": None, "filename": "VT-2026-06-28-002.html"},
+    ])
+    assert "2026-06-28" in html
+    assert 'href="META-2026-06-28-001.html"' in html
+    assert 'href="VT-2026-06-28-002.html"' in html
+    assert "META" in html and "VT" in html
+    assert "buy" in html
