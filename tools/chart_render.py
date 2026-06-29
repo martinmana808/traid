@@ -50,6 +50,9 @@ _TEMPLATE = """<!doctype html>
   #panel .note{color:#787b86;font-size:11px;margin-top:8px}
   #panel .bull{color:#26a69a}
   #panel .bear{color:#ef5350}
+  #tip{position:absolute;background:#1c1f2b;color:#d1d4dc;border:1px solid #2a2e39;
+    border-radius:4px;padding:7px 10px;max-width:260px;font-size:11px;line-height:1.5;
+    pointer-events:none;display:none;z-index:100;white-space:normal}
 </style></head><body>
 <div id="header"><span id="title">__TITLE__</span><span id="subtitle">__SUBTITLE__</span></div>
 <div id="timeframe">__TIMEFRAME__</div>
@@ -175,10 +178,11 @@ function fundBlock(){
   const f = DATA.fundamentals;
   if(!f) return '';
   const v = f.valuation||{}, g = f.growth||{}, p = f.profitability||{};
-  function fRow(label,val,reading){
+  function fRow(label,val,reading,tipKey){
     const vStr = val==null?'—':(typeof val==='number'?fmt(val):val);
     const rStr = reading?`<span class="read">${reading}</span>`:'';
-    return `<div class="row"><span class="key">${label}</span><span class="val">${vStr}</span>${rStr}</div>`;
+    const tipAttr = tipKey?` data-tip="${tipKey}"`:'';
+    return `<div class="row"${tipAttr}><span class="key">${label}</span><span class="val">${vStr}</span>${rStr}</div>`;
   }
   const peStr = v.trailing_pe!=null?fmt(v.trailing_pe):null;
   const fpeStr = v.forward_pe!=null?fmt(v.forward_pe):null;
@@ -188,11 +192,11 @@ function fundBlock(){
   return `<div class="sep"></div>
 <h3>Fundamentals (snapshot)</h3>
 <div class="row"><span class="key">${f.name||'—'}</span><span class="val">${f.sector||'—'}</span></div>
-${fRow('P/E',peStr,v.reading)}
-${fRow('Forward P/E',fpeStr,null)}
-${fRow('PEG',pegStr,null)}
-${fRow('Margin',mrgStr,p.reading)}
-${fRow('Rev growth',revStr,g.reading)}`;
+${fRow('P/E',peStr,v.reading,'pe')}
+${fRow('Forward P/E',fpeStr,null,'forwardpe')}
+${fRow('PEG',pegStr,null,'peg')}
+${fRow('Margin',mrgStr,p.reading,'margin')}
+${fRow('Rev growth',revStr,g.reading,'growth')}`;
 }
 
 function updateSummaryPanel(){
@@ -245,22 +249,22 @@ function updateSummaryPanel(){
 <div class="row"><span class="key">H (vis)</span><span class="val">${fmt(H)}</span></div>
 <div class="row"><span class="key">L (vis)</span><span class="val">${fmt(L)}</span></div>
 <div class="row"><span class="key">C</span><span class="val">${fmt(C)}</span></div>
-<div class="row"><span class="key">Change</span><span class="val ${cls(chg)}">${chg>=0?'+':''}${fmt(chg,2)}%</span></div>
-<div class="row"><span class="key">% below high</span><span class="val">${pctBelowHigh!=null?fmt(pctBelowHigh,1)+'%':'—'}</span></div>
-<div class="row"><span class="key">Vol/AvgVol</span><span class="val">${volRatio!=null?fmt(volRatio,2)+'×':'—'}</span></div>
-<div class="row"><span class="key">ATR</span><span class="val">${fmt(atrV)} (${atrPct!=null?fmt(atrPct,1)+'%':'—'})</span></div>
+<div class="row" data-tip="change"><span class="key">Change</span><span class="val ${cls(chg)}">${chg>=0?'+':''}${fmt(chg,2)}%</span></div>
+<div class="row" data-tip="fromhigh"><span class="key">% below high</span><span class="val">${pctBelowHigh!=null?fmt(pctBelowHigh,1)+'%':'—'}</span></div>
+<div class="row" data-tip="volume"><span class="key">Vol/AvgVol</span><span class="val">${volRatio!=null?fmt(volRatio,2)+'×':'—'}</span></div>
+<div class="row" data-tip="atr"><span class="key">ATR</span><span class="val">${fmt(atrV)} (${atrPct!=null?fmt(atrPct,1)+'%':'—'})</span></div>
 <div class="sep"></div>
-<div class="row"><span class="key">RSI</span><span class="val">${fmt(rsiV)}</span><span class="read">${rsiRead(rsiV)}</span></div>
-<div class="row"><span class="key">MACD</span><span class="val">${fmt(macdV)}</span><span class="read ${cls(histV)}">${macdRead(histV)}</span></div>
+<div class="row" data-tip="rsi"><span class="key">RSI</span><span class="val">${fmt(rsiV)}</span><span class="read">${rsiRead(rsiV)}</span></div>
+<div class="row" data-tip="macd"><span class="key">MACD</span><span class="val">${fmt(macdV)}</span><span class="read ${cls(histV)}">${macdRead(histV)}</span></div>
 <div class="row"><span class="key">Signal</span><span class="val">${fmt(sigV)}</span></div>
 <div class="row"><span class="key">Hist</span><span class="val ${cls(histV)}">${fmt(histV)}</span></div>
-<div class="row"><span class="key">Stoch K</span><span class="val">${fmt(kV)}</span><span class="read">${stochRead(kV)}</span></div>
+<div class="row" data-tip="stochastic"><span class="key">Stoch K</span><span class="val">${fmt(kV)}</span><span class="read">${stochRead(kV)}</span></div>
 <div class="row"><span class="key">Stoch D</span><span class="val">${fmt(dV)}</span></div>
-<div class="row"><span class="key">BB</span><span class="read">${bbR}</span></div>
+<div class="row" data-tip="bollinger"><span class="key">BB</span><span class="read">${bbR}</span></div>
 <div class="row"><span class="key">BB U/M/L</span><span class="val">${fmt(bbUV)}/${fmt(bbMV)}/${fmt(bbLV)}</span></div>
-<div class="row"><span class="key">%B</span><span class="val">${bbPctB!=null?fmt(bbPctB,2):'—'}</span></div>
+<div class="row" data-tip="percentb"><span class="key">%B</span><span class="val">${bbPctB!=null?fmt(bbPctB,2):'—'}</span></div>
 <div class="sep"></div>
-<div class="row"><span class="key">S/R</span><span class="val">${sr}</span></div>
+<div class="row" data-tip="sr"><span class="key">S/R</span><span class="val">${sr}</span></div>
 <div class="row"><span class="key">→ Support</span><span class="val ${distS!=null?cls(distS):''}">${distS!=null?(distS>=0?'+':'')+fmt(distS,1)+'%':'—'}</span></div>
 <div class="row"><span class="key">→ Resist</span><span class="val ${distR!=null?cls(distR):''}">${distR!=null?(distR>=0?'+':'')+fmt(distR,1)+'%':'—'}</span></div>
 <div class="row"><span class="key">Call</span><span class="val">${call}</span></div>
@@ -295,19 +299,19 @@ function showHoverPanel(time){
 <div class="row"><span class="key">H</span><span class="val">${fmt(c.high)}</span></div>
 <div class="row"><span class="key">L</span><span class="val">${fmt(c.low)}</span></div>
 <div class="row"><span class="key">C</span><span class="val">${fmt(c.close)}</span></div>
-<div class="row"><span class="key">Change</span><span class="val ${chg!=null?cls(chg):''}">${chg!=null?(chg>=0?'+':'')+fmt(chg,2)+'%':'—'}</span></div>
-<div class="row"><span class="key">Vol</span><span class="val">${volV!=null?Math.round(volV).toLocaleString():'—'}</span></div>
-<div class="row"><span class="key">ATR</span><span class="val">${fmt(atrV)}</span></div>
+<div class="row" data-tip="change"><span class="key">Change</span><span class="val ${chg!=null?cls(chg):''}">${chg!=null?(chg>=0?'+':'')+fmt(chg,2)+'%':'—'}</span></div>
+<div class="row" data-tip="volume"><span class="key">Vol</span><span class="val">${volV!=null?Math.round(volV).toLocaleString():'—'}</span></div>
+<div class="row" data-tip="atr"><span class="key">ATR</span><span class="val">${fmt(atrV)}</span></div>
 <div class="sep"></div>
-<div class="row"><span class="key">RSI</span><span class="val">${fmt(rsiV)}</span><span class="read">${rsiRead(rsiV)}</span></div>
-<div class="row"><span class="key">MACD</span><span class="val">${fmt(macdV)}</span><span class="read ${cls(histV)}">${macdRead(histV)}</span></div>
+<div class="row" data-tip="rsi"><span class="key">RSI</span><span class="val">${fmt(rsiV)}</span><span class="read">${rsiRead(rsiV)}</span></div>
+<div class="row" data-tip="macd"><span class="key">MACD</span><span class="val">${fmt(macdV)}</span><span class="read ${cls(histV)}">${macdRead(histV)}</span></div>
 <div class="row"><span class="key">Signal</span><span class="val">${fmt(sigV)}</span></div>
 <div class="row"><span class="key">Hist</span><span class="val ${cls(histV)}">${fmt(histV)}</span></div>
-<div class="row"><span class="key">Stoch K</span><span class="val">${fmt(kV)}</span><span class="read">${stochRead(kV)}</span></div>
+<div class="row" data-tip="stochastic"><span class="key">Stoch K</span><span class="val">${fmt(kV)}</span><span class="read">${stochRead(kV)}</span></div>
 <div class="row"><span class="key">Stoch D</span><span class="val">${fmt(dV)}</span></div>
-<div class="row"><span class="key">BB</span><span class="read">${bbR}</span></div>
+<div class="row" data-tip="bollinger"><span class="key">BB</span><span class="read">${bbR}</span></div>
 <div class="row"><span class="key">BB U/M/L</span><span class="val">${fmt(bbUV)}/${fmt(bbMV)}/${fmt(bbLV)}</span></div>
-<div class="row"><span class="key">%B</span><span class="val">${bbPctB!=null?fmt(bbPctB,2):'—'}</span></div>
+<div class="row" data-tip="percentb"><span class="key">%B</span><span class="val">${bbPctB!=null?fmt(bbPctB,2):'—'}</span></div>
 ${fundBlock()}
 <div class="note">Context for timing — not financial advice.</div>`;
 }
@@ -405,7 +409,48 @@ buttons.forEach(btn => btn.addEventListener('click', () => {
 const defBtn = document.querySelector('#timeframe button[data-res="'+DATA.default+'"]');
 if(defBtn){ defBtn.classList.add('active'); }
 loadResolution(DATA.default);
-</script></body></html>"""
+
+// Educational tooltips
+const TIPS = {
+  rsi: "RSI (Relative Strength Index) measures momentum on a 0–100 scale. Above 70 suggests overbought conditions; below 30 suggests oversold. It's context, not a predictor — stocks can stay overbought for weeks in strong trends.",
+  macd: "MACD (Moving Average Convergence Divergence) tracks momentum by comparing two EMAs. When the MACD line crosses above its signal line it suggests rising momentum; below suggests fading momentum. It lags price and works best in trending markets.",
+  bollinger: "Bollinger Bands are volatility envelopes plotted ±2 standard deviations around a 20-period moving average. Price touching the upper band is 'stretched high'; lower band is 'stretched low'. Bands expand during volatile periods and contract during quiet ones.",
+  percentb: "%B shows where price sits within the Bollinger Bands: 1.0 = at the upper band, 0.0 = at the lower band, 0.5 = at the middle. Values above 1 or below 0 mean price has moved outside the bands — notable but not a reliable sell/buy signal on its own.",
+  stochastic: "Stochastic Oscillator compares the closing price to the recent high–low range (0–100). Above 80 is overbought; below 20 is oversold. The %K line is the raw reading; %D is a 3-period smoothing. Context matters — trending markets can sustain extremes.",
+  atr: "ATR (Average True Range) measures average daily price movement (volatility). A higher ATR means bigger typical swings. Useful for sizing positions and setting stops — not a direction signal.",
+  volume: "Volume/AvgVol compares the most recent bar's volume to its 20-bar average. A ratio above 1× means heavier-than-usual activity; below 1× is lighter. Spikes on big price moves can confirm the move; spikes on flat price can signal indecision.",
+  sr: "Support and Resistance are price levels where buying or selling pressure has historically been strong. Support = a floor the price has bounced from; Resistance = a ceiling it's struggled to break. They're guides, not guarantees.",
+  pe: "P/E (Price-to-Earnings) ratio compares the share price to annual earnings per share. A higher P/E implies the market expects strong future growth. It's most useful when compared to the company's peers and historical average — a high P/E isn't inherently bad.",
+  forwardpe: "Forward P/E uses analyst estimates for next year's earnings instead of reported figures. It reflects expectations. If forward P/E is much lower than trailing P/E, the market anticipates strong earnings growth ahead — but estimates can be wrong.",
+  peg: "PEG (Price/Earnings-to-Growth) divides the P/E by the expected earnings growth rate. A PEG below 1 is often seen as undervalued relative to growth; above 2 may be expensive. It's a rough heuristic, not a precise signal.",
+  margin: "Profit margin (net income ÷ revenue) shows what fraction of sales becomes profit. Higher is better, and trend matters more than a single snapshot. Industry context is key — software companies typically have higher margins than retailers.",
+  growth: "Revenue growth shows how fast the company's sales are expanding year-over-year. Consistent, accelerating growth is a positive sign. Slowing growth in a high-P/E stock can trigger sharp sell-offs.",
+  change: "Change% is the price move from the open of the first visible candle to the close of the last — it reflects the performance over the visible window, not necessarily a single day.",
+  fromhigh: "% below high shows how far the current close sits below the highest price in the visible window. It gives a quick sense of how much of a recent rally has given back — useful context but not a reversal signal on its own.",
+};
+const tipEl = document.getElementById('tip');
+document.getElementById('panel').addEventListener('mouseover', e => {
+  const row = e.target.closest('[data-tip]');
+  if(!row) return;
+  const key = row.dataset.tip;
+  if(!TIPS[key]) return;
+  tipEl.textContent = TIPS[key];
+  tipEl.style.display = 'block';
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let x = e.clientX + 12, y = e.clientY + 12;
+  if(x + 270 > vw) x = e.clientX - 270;
+  if(y + tipEl.offsetHeight + 10 > vh) y = e.clientY - tipEl.offsetHeight - 8;
+  tipEl.style.left = x + 'px';
+  tipEl.style.top  = y + 'px';
+});
+document.getElementById('panel').addEventListener('mouseout', e => {
+  const row = e.target.closest('[data-tip]');
+  if(!row) return;
+  tipEl.style.display = 'none';
+});
+</script>
+<div id="tip"></div>
+</body></html>"""
 
 _LEGEND = (
     "<b>How to read this:</b> scroll to zoom, drag to pan, hover for values. "

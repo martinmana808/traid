@@ -90,6 +90,14 @@ def test_render_has_indicator_toggles():
     assert "collapsed" in html           # sub-pane collapse class
 
 
+def test_render_has_educational_tooltips():
+    html = render_chart_html(_payload())
+    assert 'id="tip"' in html
+    assert "const TIPS" in html or "TIPS = {" in html
+    assert "data-tip=" in html
+    assert "mouseover" in html
+
+
 def test_session_index_links_each_entry():
     html = render_session_index("2026-06-28", [
         {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},
