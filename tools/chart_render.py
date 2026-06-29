@@ -445,7 +445,7 @@ loadResolution(DATA.default);
   priceEl.addEventListener('mousedown', function(e){
     if(e.shiftKey){
       dragging = true;
-      dragStartX = e.offsetX;
+      dragStartX = e.clientX - priceEl.getBoundingClientRect().left;
       e.preventDefault();
     } else {
       clearSelection();
