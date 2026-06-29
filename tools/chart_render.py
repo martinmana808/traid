@@ -519,6 +519,9 @@ def render_chart_html(payload, meta=None):
     )
 
     fund_block_html = _make_fund_block_html(payload.get("fundamentals"))
+    # Harden: this HTML is injected into a JS template literal, so neutralize any
+    # backtick / ${ that could break it (defensive — real fundamentals data is clean).
+    fund_block_html = fund_block_html.replace("`", "&#96;").replace("${", "&#36;{")
 
     return (
         _TEMPLATE
