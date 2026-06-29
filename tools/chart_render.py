@@ -171,6 +171,30 @@ function lastDefinedInRange(arr,fromIdx,toIdx){
   return null;
 }
 
+function fundBlock(){
+  const f = DATA.fundamentals;
+  if(!f) return '';
+  const v = f.valuation||{}, g = f.growth||{}, p = f.profitability||{};
+  function fRow(label,val,reading){
+    const vStr = val==null?'—':(typeof val==='number'?fmt(val):val);
+    const rStr = reading?`<span class="read">${reading}</span>`:'';
+    return `<div class="row"><span class="key">${label}</span><span class="val">${vStr}</span>${rStr}</div>`;
+  }
+  const peStr = v.trailing_pe!=null?fmt(v.trailing_pe):null;
+  const fpeStr = v.forward_pe!=null?fmt(v.forward_pe):null;
+  const pegStr = v.peg!=null?fmt(v.peg):null;
+  const mrgStr = p.profit_margin_pct!=null?fmt(p.profit_margin_pct,1)+'%':null;
+  const revStr = g.revenue_growth_pct!=null?fmt(g.revenue_growth_pct,1)+'%':null;
+  return `<div class="sep"></div>
+<h3>Fundamentals (snapshot)</h3>
+<div class="row"><span class="key">${f.name||'—'}</span><span class="val">${f.sector||'—'}</span></div>
+${fRow('P/E',peStr,v.reading)}
+${fRow('Forward P/E',fpeStr,null)}
+${fRow('PEG',pegStr,null)}
+${fRow('Margin',mrgStr,p.reading)}
+${fRow('Rev growth',revStr,g.reading)}`;
+}
+
 function updateSummaryPanel(){
   const res = _currentRes;
   if(!res) return;
@@ -198,13 +222,33 @@ function updateSummaryPanel(){
   const bbR=bbRead(C,bbUV,bbLV);
   const sr=d.support!=null?`S ${fmt(d.support)} / R ${fmt(d.resistance)}`:'—';
   const call=DATA.call||(DATA.meta&&DATA.meta.call)||'—';
+  // Derived stats
+  const pctBelowHigh = (H>0)?((H-C)/H*100):null;
+  const volArr = d.volume||[];
+  const lastVolIdx = Math.min(hi, volArr.length-1);
+  const lastVol = (lastVolIdx>=0 && volArr[lastVolIdx] && volArr[lastVolIdx].value!=null)?volArr[lastVolIdx].value:null;
+  const wnd = Math.min(20, lastVolIdx+1);
+  let vSum=0, vCnt=0;
+  for(let i=Math.max(0,lastVolIdx-wnd+1);i<=lastVolIdx;i++){
+    if(volArr[i]&&volArr[i].value!=null){vSum+=volArr[i].value;vCnt++;}
+  }
+  const volAvg = vCnt>0?vSum/vCnt:null;
+  const volRatio = (lastVol!=null&&volAvg!=null&&volAvg>0)?(lastVol/volAvg):null;
+  const atrV = lastDefined(d.atr);
+  const atrPct = (atrV!=null&&C>0)?(atrV/C*100):null;
+  const bbPctB = (bbUV!=null&&bbLV!=null&&(bbUV-bbLV)>0)?((C-bbLV)/(bbUV-bbLV)):null;
+  const distS = (d.support!=null&&C>0)?((d.support/C-1)*100):null;
+  const distR = (d.resistance!=null&&C>0)?((d.resistance/C-1)*100):null;
   document.getElementById('panel-body').innerHTML=`
 <div class="row"><span class="key">Range</span><span class="val">${first.time} → ${last.time}</span></div>
 <div class="row"><span class="key">O</span><span class="val">${fmt(O)}</span></div>
-<div class="row"><span class="key">H</span><span class="val">${fmt(H)}</span></div>
-<div class="row"><span class="key">L</span><span class="val">${fmt(L)}</span></div>
+<div class="row"><span class="key">H (vis)</span><span class="val">${fmt(H)}</span></div>
+<div class="row"><span class="key">L (vis)</span><span class="val">${fmt(L)}</span></div>
 <div class="row"><span class="key">C</span><span class="val">${fmt(C)}</span></div>
 <div class="row"><span class="key">Change</span><span class="val ${cls(chg)}">${chg>=0?'+':''}${fmt(chg,2)}%</span></div>
+<div class="row"><span class="key">% below high</span><span class="val">${pctBelowHigh!=null?fmt(pctBelowHigh,1)+'%':'—'}</span></div>
+<div class="row"><span class="key">Vol/AvgVol</span><span class="val">${volRatio!=null?fmt(volRatio,2)+'×':'—'}</span></div>
+<div class="row"><span class="key">ATR</span><span class="val">${fmt(atrV)} (${atrPct!=null?fmt(atrPct,1)+'%':'—'})</span></div>
 <div class="sep"></div>
 <div class="row"><span class="key">RSI</span><span class="val">${fmt(rsiV)}</span><span class="read">${rsiRead(rsiV)}</span></div>
 <div class="row"><span class="key">MACD</span><span class="val">${fmt(macdV)}</span><span class="read ${cls(histV)}">${macdRead(histV)}</span></div>
@@ -214,9 +258,13 @@ function updateSummaryPanel(){
 <div class="row"><span class="key">Stoch D</span><span class="val">${fmt(dV)}</span></div>
 <div class="row"><span class="key">BB</span><span class="read">${bbR}</span></div>
 <div class="row"><span class="key">BB U/M/L</span><span class="val">${fmt(bbUV)}/${fmt(bbMV)}/${fmt(bbLV)}</span></div>
+<div class="row"><span class="key">%B</span><span class="val">${bbPctB!=null?fmt(bbPctB,2):'—'}</span></div>
 <div class="sep"></div>
 <div class="row"><span class="key">S/R</span><span class="val">${sr}</span></div>
+<div class="row"><span class="key">→ Support</span><span class="val ${distS!=null?cls(distS):''}">${distS!=null?(distS>=0?'+':'')+fmt(distS,1)+'%':'—'}</span></div>
+<div class="row"><span class="key">→ Resist</span><span class="val ${distR!=null?cls(distR):''}">${distR!=null?(distR>=0?'+':'')+fmt(distR,1)+'%':'—'}</span></div>
 <div class="row"><span class="key">Call</span><span class="val">${call}</span></div>
+${fundBlock()}
 <div class="note">Context for timing — not financial advice.</div>`;
 }
 
@@ -236,9 +284,11 @@ function showHoverPanel(time){
   const bbUV=(d.bollinger.upper[idx]&&d.bollinger.upper[idx].value!=null)?d.bollinger.upper[idx].value:null;
   const bbMV=(d.bollinger.middle[idx]&&d.bollinger.middle[idx].value!=null)?d.bollinger.middle[idx].value:null;
   const bbLV=(d.bollinger.lower[idx]&&d.bollinger.lower[idx].value!=null)?d.bollinger.lower[idx].value:null;
-  const vol=(d.volume[idx]&&d.volume[idx].value!=null)?d.volume[idx].value:null;
+  const volV=(d.volume[idx]&&d.volume[idx].value!=null)?d.volume[idx].value:null;
+  const atrV=(d.atr&&d.atr[idx]&&d.atr[idx].value!=null)?d.atr[idx].value:null;
   const chg=c.open&&c.close?((c.close/c.open-1)*100):null;
   const bbR=bbRead(c.close,bbUV,bbLV);
+  const bbPctB=(bbUV!=null&&bbLV!=null&&(bbUV-bbLV)>0)?((c.close-bbLV)/(bbUV-bbLV)):null;
   document.getElementById('panel-body').innerHTML=`
 <div class="row"><span class="key">Date</span><span class="val">${time}</span></div>
 <div class="row"><span class="key">O</span><span class="val">${fmt(c.open)}</span></div>
@@ -246,7 +296,8 @@ function showHoverPanel(time){
 <div class="row"><span class="key">L</span><span class="val">${fmt(c.low)}</span></div>
 <div class="row"><span class="key">C</span><span class="val">${fmt(c.close)}</span></div>
 <div class="row"><span class="key">Change</span><span class="val ${chg!=null?cls(chg):''}">${chg!=null?(chg>=0?'+':'')+fmt(chg,2)+'%':'—'}</span></div>
-<div class="row"><span class="key">Vol</span><span class="val">${vol!=null?Math.round(vol).toLocaleString():'—'}</span></div>
+<div class="row"><span class="key">Vol</span><span class="val">${volV!=null?Math.round(volV).toLocaleString():'—'}</span></div>
+<div class="row"><span class="key">ATR</span><span class="val">${fmt(atrV)}</span></div>
 <div class="sep"></div>
 <div class="row"><span class="key">RSI</span><span class="val">${fmt(rsiV)}</span><span class="read">${rsiRead(rsiV)}</span></div>
 <div class="row"><span class="key">MACD</span><span class="val">${fmt(macdV)}</span><span class="read ${cls(histV)}">${macdRead(histV)}</span></div>
@@ -256,6 +307,8 @@ function showHoverPanel(time){
 <div class="row"><span class="key">Stoch D</span><span class="val">${fmt(dV)}</span></div>
 <div class="row"><span class="key">BB</span><span class="read">${bbR}</span></div>
 <div class="row"><span class="key">BB U/M/L</span><span class="val">${fmt(bbUV)}/${fmt(bbMV)}/${fmt(bbLV)}</span></div>
+<div class="row"><span class="key">%B</span><span class="val">${bbPctB!=null?fmt(bbPctB,2):'—'}</span></div>
+${fundBlock()}
 <div class="note">Context for timing — not financial advice.</div>`;
 }
 

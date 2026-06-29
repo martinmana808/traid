@@ -14,10 +14,26 @@ def _payload():
                  "hist": [{"time": "2026-06-26", "value": -0.1}]},
         "stochastic": {"k": [{"time": "2026-06-26", "value": 50.0}],
                        "d": [{"time": "2026-06-26", "value": 55.0}]},
+        "atr": [{"time": "2026-06-26", "value": 5.2}],
         "support": 190.0, "resistance": 205.0,
     }
     return {"ticker": "NVDA", "as_of": "2026-06-26", "price": 198.18,
-            "default": "1d", "resolutions": {"1d": series, "1wk": series, "1mo": series}}
+            "default": "1d", "resolutions": {"1d": series, "1wk": series, "1mo": series},
+            "fundamentals": None}
+
+
+def test_render_panel_has_richer_stats_and_fundamentals():
+    pay = _payload()
+    pay["fundamentals"] = {"name": "NVIDIA", "sector": "Tech",
+                           "valuation": {"trailing_pe": 50, "forward_pe": 30, "peg": 0.7,
+                                         "reading": "P/E 50 — high"},
+                           "growth": {"revenue_growth_pct": 60, "reading": "60% — strong"},
+                           "profitability": {"profit_margin_pct": 55, "reading": "55% — high"}}
+    html = render_chart_html(pay)
+    assert "Fundamentals" in html
+    assert "PEG" in html
+    # ATR / %B / distance-to-S/R stat labels present in the panel JS
+    assert "ATR" in html and "%B" in html
 
 
 def test_render_embeds_payload_and_controls():
