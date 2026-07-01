@@ -15,6 +15,8 @@ def _payload():
         "stochastic": {"k": [{"time": "2026-06-26", "value": 50.0}],
                        "d": [{"time": "2026-06-26", "value": 55.0}]},
         "atr": [{"time": "2026-06-26", "value": 5.2}],
+        "sma50": [{"time": "2026-06-26", "value": 185.0}],
+        "sma200": [{"time": "2026-06-26", "value": 175.0}],
         "support": 190.0, "resistance": 205.0,
     }
     return {"ticker": "NVDA", "as_of": "2026-06-26", "price": 198.18,
@@ -138,6 +140,15 @@ def test_selection_spans_all_panes_and_has_clear_button():
     assert 'id="sel-clear"' in html
     # hover restriction references the selection bounds
     assert "sel.from" in html and "sel.to" in html
+
+
+def test_render_has_moving_averages():
+    html = render_chart_html(_payload())
+    assert 'data-toggle="sma50"' in html and 'data-toggle="sma200"' in html
+    assert "sma50" in html and "sma200" in html
+    assert "MA50" in html and "MA200" in html
+    # tooltip entries
+    assert "golden cross" in html.lower() or "death cross" in html.lower()
 
 
 def test_session_index_links_each_entry():

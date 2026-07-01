@@ -62,7 +62,7 @@ _TEMPLATE = """<!doctype html>
 <div id="layout">
 <div id="charts-col">
 <div class="label">Price · Bollinger · Volume</div>
-<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb">BB</span><span class="tog" data-toggle="vol">Vol</span></div><div id="mask-left-price" class="dim-mask"></div><div id="mask-right-price" class="dim-mask"></div><div id="sel-clear">×</div></div>
+<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb">BB</span><span class="tog" data-toggle="vol">Vol</span><span class="tog" data-toggle="sma50">MA50</span><span class="tog" data-toggle="sma200">MA200</span></div><div id="mask-left-price" class="dim-mask"></div><div id="mask-right-price" class="dim-mask"></div><div id="sel-clear">×</div></div>
 <div class="label" data-label-for="rsi">RSI (14)</div>
 <div class="pane" id="rsi"><div class="tog-cluster"><span class="tog" data-toggle="rsi">RSI</span></div><div id="mask-left-rsi" class="dim-mask"></div><div id="mask-right-rsi" class="dim-mask"></div></div>
 <div class="label" data-label-for="macd">MACD (12,26,9)</div>
@@ -100,6 +100,8 @@ const bbM = price.addLineSeries({color:'#787b86',lineWidth:1});
 const bbL = price.addLineSeries({color:'#5b8def',lineWidth:1});
 const vol  = price.addHistogramSeries({priceScaleId:'',priceFormat:{type:'volume'},color:'#2b3145'});
 vol.priceScale().applyOptions({scaleMargins:{top:0.82,bottom:0}});
+const sma50S  = price.addLineSeries({color:'#e0a73e',lineWidth:2});
+const sma200S = price.addLineSeries({color:'#b39ddb',lineWidth:2});
 
 const rsiS = rsiC.addLineSeries({color:'#e0a73e',lineWidth:1});
 rsiS.createPriceLine({price:70,color:'#ef5350',lineStyle:2,title:'70'});
@@ -258,6 +260,10 @@ function updateSummaryPanel(){
   const bbMV=lastDefinedInRange(d.bollinger.middle,lo,hi);
   const bbLV=lastDefinedInRange(d.bollinger.lower,lo,hi);
   const bbR=bbRead(C,bbUV,bbLV);
+  const sma50V=lastDefinedInRange(d.sma50,lo,hi);
+  const sma200V=lastDefinedInRange(d.sma200,lo,hi);
+  let trendRead='—';
+  if(sma50V!=null&&sma200V!=null){ trendRead=sma50V>sma200V?'Golden cross (50>200)':'Death cross (50<200)'; }
   const sr=d.support!=null?`S ${fmt(d.support)} / R ${fmt(d.resistance)}`:'—';
   const call=DATA.call||(DATA.meta&&DATA.meta.call)||'—';
   // Derived stats
@@ -297,6 +303,9 @@ function updateSummaryPanel(){
 <div class="row" data-tip="bollinger"><span class="key">BB</span><span class="read">${bbR}</span></div>
 <div class="row"><span class="key">BB U/M/L</span><span class="val">${fmt(bbUV)}/${fmt(bbMV)}/${fmt(bbLV)}</span></div>
 <div class="row" data-tip="percentb"><span class="key">%B</span><span class="val">${bbPctB!=null?fmt(bbPctB,2):'—'}</span></div>
+<div class="row" data-tip="sma50"><span class="key">MA50</span><span class="val">${fmt(sma50V)}</span></div>
+<div class="row" data-tip="sma200"><span class="key">MA200</span><span class="val">${fmt(sma200V)}</span></div>
+<div class="row"><span class="key">Trend</span><span class="val">${trendRead}</span></div>
 <div class="sep"></div>
 <div class="row" data-tip="sr"><span class="key">S/R</span><span class="val">${sr}</span></div>
 <div class="row"><span class="key">→ Support</span><span class="val ${distS!=null?cls(distS):''}">${distS!=null?(distS>=0?'+':'')+fmt(distS,1)+'%':'—'}</span></div>
@@ -407,6 +416,14 @@ document.querySelectorAll('.tog').forEach(chip => {
       chip.classList.toggle('off');
       const on = !chip.classList.contains('off');
       vol.applyOptions({visible:on});
+    } else if(t === 'sma50'){
+      chip.classList.toggle('off');
+      const on = !chip.classList.contains('off');
+      sma50S.applyOptions({visible:on});
+    } else if(t === 'sma200'){
+      chip.classList.toggle('off');
+      const on = !chip.classList.contains('off');
+      sma200S.applyOptions({visible:on});
     } else {
       // sub-pane collapse toggle (rsi / macd / stoch)
       const paneEl = document.getElementById(t);
@@ -430,6 +447,8 @@ function loadResolution(res){
   bbM.setData(d.bollinger.middle);
   bbL.setData(d.bollinger.lower);
   vol.setData(d.volume);
+  sma50S.setData(d.sma50);
+  sma200S.setData(d.sma200);
   rsiS.setData(d.rsi);
   macdHist.setData(d.macd.hist.map(p =>
     (p.value == null) ? {time:p.time} : {time:p.time,value:p.value,color:p.value>=0?'#26a69a':'#ef5350'}
@@ -524,6 +543,8 @@ const TIPS = {
   growth: "Revenue growth shows how fast the company's sales are expanding year-over-year. Consistent, accelerating growth is a positive sign. Slowing growth in a high-P/E stock can trigger sharp sell-offs.",
   change: "Change% is the price move from the open of the first visible candle to the close of the last — it reflects the performance over the visible window, not necessarily a single day.",
   fromhigh: "% below high shows how far the current close sits below the highest price in the visible window. It gives a quick sense of how much of a recent rally has given back — useful context but not a reversal signal on its own.",
+  sma50: "MA50 (50-day moving average) smooths price over the medium term to show the prevailing trend. When price is above the MA50 the near-term trend is generally up; below suggests weakness. It lags price — it confirms direction, not predicts it. When the MA50 crosses above the MA200 it is called a golden cross (bullish signal); when it crosses below, a death cross (bearish signal).",
+  sma200: "MA200 (200-day moving average) is the long-term trend line widely watched by institutions. Price consistently above the MA200 is considered a healthier market environment. A golden cross (MA50 rising above MA200) is seen as a bullish regime shift; a death cross (MA50 falling below MA200) signals a bearish regime. Both are lagging trend gauges, not predictors — they confirm what has already happened.",
 };
 const tipEl = document.getElementById('tip');
 document.getElementById('panel').addEventListener('mouseover', e => {
