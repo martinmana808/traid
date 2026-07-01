@@ -4,6 +4,7 @@ Pure string rendering — no network, no filesystem. Embeds the chart data as
 JSON and loads TradingView lightweight-charts from a pinned CDN URL.
 """
 import json
+from datetime import datetime, timezone
 
 CDN = "https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"
 
@@ -324,6 +325,7 @@ function updateSummaryPanel(){
 <div class="row"><span class="key">→ Resist</span><span class="val ${distR!=null?cls(distR):''}">${distR!=null?(distR>=0?'+':'')+fmt(distR,1)+'%':'—'}</span></div>
 <div class="row"><span class="key">Call</span><span class="val">${call}</span></div>
 __FUND_BLOCK__
+__STATS_BLOCK__
 <div class="note">Context for timing — not financial advice.</div>`;
 }
 
@@ -366,6 +368,7 @@ function showHoverPanel(time){
 <div class="row"><span class="key">BB U/M/L</span><span class="val">${fmt(bbUV)}/${fmt(bbMV)}/${fmt(bbLV)}</span></div>
 <div class="row" data-tip="percentb"><span class="key">%B</span><span class="val">${bbPctB!=null?fmt(bbPctB,2):'—'}</span></div>
 __FUND_BLOCK__
+__STATS_BLOCK__
 <div class="note">Context for timing — not financial advice.</div>`;
 }
 
@@ -575,6 +578,11 @@ const TIPS = {
   fromhigh: "% below high shows how far the current close sits below the highest price in the visible window. It gives a quick sense of how much of a recent rally has given back — useful context but not a reversal signal on its own.",
   sma50: "MA50 (50-day moving average) smooths price over the medium term to show the prevailing trend. When price is above the MA50 the near-term trend is generally up; below suggests weakness. It lags price — it confirms direction, not predicts it. When the MA50 crosses above the MA200 it is called a golden cross (bullish signal); when it crosses below, a death cross (bearish signal).",
   sma200: "MA200 (200-day moving average) is the long-term trend line widely watched by institutions. Price consistently above the MA200 is considered a healthier market environment. A golden cross (MA50 rising above MA200) is seen as a bullish regime shift; a death cross (MA50 falling below MA200) signals a bearish regime. Both are lagging trend gauges, not predictors — they confirm what has already happened.",
+  marketcap: "Market capitalisation — the total value of all outstanding shares (price × shares). Mega-cap (>$200B), large-cap ($10–200B), mid-cap ($2–10B), small-cap (<$2B). Larger companies tend to be more stable; smaller ones tend to be more volatile.",
+  avgvol: "Average daily trading volume over the past 30 days. Higher volume means it is easier to enter or exit a position at the quoted price. Low-volume days can make price moves less reliable.",
+  perf: "Price return over the listed period. Colored green for gains, red for losses. These are backward-looking — past returns do not predict future performance.",
+  analyst: "Consensus analyst rating and price target, aggregated across Wall Street analysts who cover this stock. Treat as one data point among many — analysts can be wrong and targets shift frequently.",
+  technicals: "A simple mechanical tally of trend + momentum signals (moving averages, RSI, MACD, stochastic) — context, not advice.",
 };
 const tipEl = document.getElementById('tip');
 document.getElementById('panel').addEventListener('mouseover', e => {
@@ -672,6 +680,119 @@ def _make_fund_block_html(f):
     return '\n'.join(lines)
 
 
+def _compact(n):
+    """Format a number compactly: 4.78T, 168M, 1.23B, 500K, etc."""
+    if n is None:
+        return '—'
+    for label, divisor in [('T', 1e12), ('B', 1e9), ('M', 1e6), ('K', 1e3)]:
+        if abs(n) >= divisor:
+            val = n / divisor
+            s = f'{val:.2f}'.rstrip('0').rstrip('.')
+            return s + label
+    return str(int(n))
+
+
+def _make_stats_block_html(payload):
+    """Build the rich stats sidebar HTML: key facts, performance, analyst, technicals.
+
+    Returns an HTML string injected via __STATS_BLOCK__. Each section is preceded
+    by a .sep divider + <h3>. Sections whose data is missing are omitted entirely.
+    Never emits 'None' or 'undefined'.
+    """
+
+    def _epoch_to_date(epoch):
+        if epoch is None:
+            return '—'
+        try:
+            return datetime.fromtimestamp(epoch, tz=timezone.utc).strftime('%Y-%m-%d')
+        except (TypeError, ValueError, OSError):
+            return '—'
+
+    def _pct(val):
+        if val is None:
+            return '<span class="val">—</span>'
+        cls = 'bull' if val >= 0 else 'bear'
+        sign = '+' if val >= 0 else ''
+        return f'<span class="val {cls}">{sign}{val:.1f}%</span>'
+
+    def _tech_cls(label):
+        if not label:
+            return ''
+        lower = label.lower()
+        if 'buy' in lower:
+            return 'bull'
+        if 'sell' in lower:
+            return 'bear'
+        return ''
+
+    parts = []
+
+    # ── Key facts ────────────────────────────────────────────────────────────
+    fundamentals = payload.get('fundamentals') or {}
+    snapshot = fundamentals.get('snapshot') if fundamentals else None
+    if snapshot:
+        mc = _compact(snapshot.get('market_cap'))
+        av = _compact(snapshot.get('avg_volume'))
+        w52l = snapshot.get('week52_low')
+        w52h = snapshot.get('week52_high')
+        w52 = f'{w52l} – {w52h}' if (w52l is not None and w52h is not None) else '—'
+        ne = _epoch_to_date(snapshot.get('next_earnings'))
+        dy = snapshot.get('dividend_yield')
+        dy_str = f'{dy:.2f}%' if dy is not None else '—'
+        parts += [
+            '<div class="sep"></div>',
+            '<h3 data-tip="marketcap">Key facts</h3>',
+            f'<div class="row"><span class="key" data-tip="marketcap">Market cap</span><span class="val">{mc}</span></div>',
+            f'<div class="row"><span class="key" data-tip="avgvol">Avg vol (30d)</span><span class="val">{av}</span></div>',
+            f'<div class="row"><span class="key">52w range</span><span class="val">{w52}</span></div>',
+            f'<div class="row"><span class="key">Next earnings</span><span class="val">{ne}</span></div>',
+            f'<div class="row"><span class="key">Div yield</span><span class="val">{dy_str}</span></div>',
+        ]
+
+    # ── Performance ──────────────────────────────────────────────────────────
+    perf = payload.get('performance')
+    if perf:
+        parts += [
+            '<div class="sep"></div>',
+            '<h3 data-tip="perf">Performance</h3>',
+        ]
+        for key, label in [('w1', '1W'), ('m1', '1M'), ('m3', '3M'), ('ytd', 'YTD'), ('y1', '1Y')]:
+            parts.append(
+                f'<div class="row"><span class="key">{label}</span>{_pct(perf.get(key))}</div>'
+            )
+
+    # ── Analyst ──────────────────────────────────────────────────────────────
+    if snapshot:
+        rating = snapshot.get('analyst_rating')
+        if rating:
+            rating_str = rating.replace('_', ' ').title()
+            target = snapshot.get('analyst_target')
+            count = snapshot.get('analyst_count')
+            target_str = f'{target:.2f}' if target is not None else '—'
+            count_str = f'({count} analysts)' if count is not None else '—'
+            parts += [
+                '<div class="sep"></div>',
+                '<h3 data-tip="analyst">Analyst</h3>',
+                f'<div class="row"><span class="key">Rating</span><span class="val">{rating_str}</span></div>',
+                f'<div class="row"><span class="key">Target</span><span class="val">{target_str}</span></div>',
+                f'<div class="row"><span class="key">Coverage</span><span class="val">{count_str}</span></div>',
+            ]
+
+    # ── Technicals ───────────────────────────────────────────────────────────
+    technicals = payload.get('technicals')
+    if technicals:
+        label = technicals.get('label') or '—'
+        tech_cls = _tech_cls(label)
+        cls_attr = f' {tech_cls}' if tech_cls else ''
+        parts += [
+            '<div class="sep"></div>',
+            '<h3 data-tip="technicals">Technicals</h3>',
+            f'<div class="row"><span class="key">Signal</span><span class="val{cls_attr}">{label}</span></div>',
+        ]
+
+    return '\n'.join(parts)
+
+
 def render_chart_html(payload, meta=None):
     meta = meta or {}
     ticker = payload.get("ticker", "?")
@@ -700,6 +821,9 @@ def render_chart_html(payload, meta=None):
     # backtick / ${ that could break it (defensive — real fundamentals data is clean).
     fund_block_html = fund_block_html.replace("`", "&#96;").replace("${", "&#36;{")
 
+    stats_block_html = _make_stats_block_html(payload)
+    stats_block_html = stats_block_html.replace("`", "&#96;").replace("${", "&#36;{")
+
     return (
         _TEMPLATE
         .replace("__CDN__", CDN)
@@ -709,6 +833,7 @@ def render_chart_html(payload, meta=None):
         .replace("__TIMEFRAME__", timeframe_html)
         .replace("__DATA__", json.dumps(payload))
         .replace("__FUND_BLOCK__", fund_block_html)
+        .replace("__STATS_BLOCK__", stats_block_html)
     )
 
 

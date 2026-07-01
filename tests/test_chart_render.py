@@ -21,7 +21,19 @@ def _payload():
     }
     return {"ticker": "NVDA", "as_of": "2026-06-26", "price": 198.18,
             "default": "1d", "resolutions": {"1d": series, "1wk": series, "1mo": series},
-            "fundamentals": None}
+            "fundamentals": {
+                "name": "NVIDIA", "sector": "Tech",
+                "valuation": {"trailing_pe": 50, "forward_pe": 30, "peg": 0.7, "reading": ""},
+                "growth": {"revenue_growth_pct": 60, "reading": ""},
+                "profitability": {"profit_margin_pct": 55, "reading": ""},
+                "snapshot": {
+                    "market_cap": 4.78e12, "avg_volume": 168e6, "dividend_yield": 0.14,
+                    "next_earnings": None, "week52_high": 300, "week52_low": 100,
+                    "analyst_rating": "strong_buy", "analyst_target": 313.39, "analyst_count": 42,
+                },
+            },
+            "performance": {"w1": -1.2, "m1": 3.4, "m3": 10.0, "ytd": 26.4, "y1": 14.7},
+            "technicals": {"score": 3, "label": "Strong buy"}}
 
 
 def test_render_panel_has_richer_stats_and_fundamentals():
@@ -101,7 +113,9 @@ def test_render_has_educational_tooltips():
 
 
 def test_render_omits_fundamentals_when_null():
-    html = render_chart_html(_payload())  # _payload has fundamentals: None
+    pay = _payload()
+    pay["fundamentals"] = None  # explicitly null → fund block omitted
+    html = render_chart_html(pay)
     assert "Fundamentals (snapshot)" not in html
 
 
@@ -166,6 +180,20 @@ def test_panel_shift_hover_and_colored_volume():
     assert "function renderPanel" in html or "renderPanel = " in html or "renderPanel(" in html
     assert "keydown" in html and "keyup" in html
     assert "rgba(38,166,154,0.4)" in html and "rgba(239,83,80,0.4)" in html  # colored volume
+
+
+def test_render_has_rich_panel_sections():
+    pay = _payload()
+    pay["performance"] = {"w1": -1.2, "m1": 3.4, "m3": 10.0, "ytd": 26.4, "y1": 14.7}
+    pay["technicals"] = {"score": 3, "label": "Strong buy"}
+    pay["fundamentals"] = {"name":"NVIDIA","sector":"Tech","valuation":{"peg":0.6,"reading":""},
+        "snapshot":{"market_cap":4.78e12,"avg_volume":168e6,"dividend_yield":0.14,
+                    "next_earnings":None,"week52_high":300,"week52_low":100,
+                    "analyst_rating":"strong_buy","analyst_target":313.39,"analyst_count":42}}
+    html = render_chart_html(pay)
+    assert "Performance" in html and "Technicals" in html
+    assert "Strong buy" in html or "Strong Buy" in html
+    assert "Market cap" in html or "Mkt cap" in html
 
 
 def test_session_index_links_each_entry():
