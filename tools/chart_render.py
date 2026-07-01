@@ -131,6 +131,12 @@ function visibleCharts(){
   if(paneState.stoch) active.push(stoch);
   return active;
 }
+// keep the time axis on whichever pane is currently the bottom-most visible one
+function updateBottomAxis(){
+  const vis = visibleCharts();
+  const bottom = vis[vis.length-1];
+  [price,rsiC,macdC,stoch].forEach(c => c.timeScale().applyOptions({visible: c===bottom}));
+}
 
 let syncing = false;
 let sel = null;
@@ -439,6 +445,7 @@ document.querySelectorAll('.tog').forEach(chip => {
       chip.classList.toggle('off', nowCollapsed);
       const labelEl = document.querySelector(`[data-label-for="${t}"]`);
       if(labelEl) labelEl.classList.toggle('hidden', nowCollapsed);
+      updateBottomAxis();
       visibleCharts().forEach(c => c.timeScale().fitContent());
     }
   });
