@@ -26,9 +26,9 @@ _TEMPLATE = """<!doctype html>
   .pane{width:100%;min-height:0;position:relative}
   .pane.collapsed{flex:0 0 0;min-height:0;height:0;overflow:hidden}
   .tog-cluster{position:absolute;top:4px;left:4px;z-index:5;display:flex;gap:4px}
-  .tog{background:#1c1f2b;color:#9aa0ad;border:1px solid #2a2e39;border-radius:3px;
+  .tog{background:#1c1f2b;color:var(--c,#9aa0ad);border:1px solid var(--c,#2a2e39);border-radius:3px;
     padding:2px 6px;cursor:pointer;font-size:11px;user-select:none}
-  .tog.off{color:#454851;border-color:#1c1f2b}
+  .tog.off{color:#454851;border-color:#2a2e39}
   #timeframe{padding:6px 14px;display:flex;gap:6px;border-bottom:1px solid #1c1f2b}
   #timeframe button{background:#1c1f2b;color:#9aa0ad;border:1px solid #2a2e39;border-radius:4px;
     padding:3px 10px;cursor:pointer;font-size:12px}
@@ -62,13 +62,13 @@ _TEMPLATE = """<!doctype html>
 <div id="layout">
 <div id="charts-col">
 <div class="label">Price · Bollinger · Volume</div>
-<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb">BB</span><span class="tog" data-toggle="vol">Vol</span><span class="tog" data-toggle="sma50">MA50</span><span class="tog" data-toggle="sma200">MA200</span></div><div id="mask-left-price" class="dim-mask"></div><div id="mask-right-price" class="dim-mask"></div><div id="sel-clear">×</div></div>
+<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb" style="--c:#5b8def">BB</span><span class="tog" data-toggle="vol" style="--c:#8891a5">Vol</span><span class="tog" data-toggle="sma50" style="--c:#e0a73e">MA50</span><span class="tog" data-toggle="sma200" style="--c:#b39ddb">MA200</span></div><div id="mask-left-price" class="dim-mask"></div><div id="mask-right-price" class="dim-mask"></div><div id="sel-clear">×</div></div>
 <div class="label" data-label-for="rsi">RSI (14)</div>
-<div class="pane" id="rsi"><div class="tog-cluster"><span class="tog" data-toggle="rsi">RSI</span></div><div id="mask-left-rsi" class="dim-mask"></div><div id="mask-right-rsi" class="dim-mask"></div></div>
+<div class="pane" id="rsi"><div class="tog-cluster"><span class="tog" data-toggle="rsi" style="--c:#e0a73e">RSI</span></div><div id="mask-left-rsi" class="dim-mask"></div><div id="mask-right-rsi" class="dim-mask"></div></div>
 <div class="label" data-label-for="macd">MACD (12,26,9)</div>
-<div class="pane" id="macd"><div class="tog-cluster"><span class="tog" data-toggle="macd">MACD</span></div><div id="mask-left-macd" class="dim-mask"></div><div id="mask-right-macd" class="dim-mask"></div></div>
+<div class="pane" id="macd"><div class="tog-cluster"><span class="tog" data-toggle="macd" style="--c:#5b8def">MACD</span></div><div id="mask-left-macd" class="dim-mask"></div><div id="mask-right-macd" class="dim-mask"></div></div>
 <div class="label" data-label-for="stoch">Stochastic (14,3)</div>
-<div class="pane" id="stoch"><div class="tog-cluster"><span class="tog" data-toggle="stoch">STOCH</span></div><div id="mask-left-stoch" class="dim-mask"></div><div id="mask-right-stoch" class="dim-mask"></div></div>
+<div class="pane" id="stoch"><div class="tog-cluster"><span class="tog" data-toggle="stoch" style="--c:#5b8def">STOCH</span></div><div id="mask-left-stoch" class="dim-mask"></div><div id="mask-right-stoch" class="dim-mask"></div></div>
 </div>
 <div id="panel"><h3>Info</h3><div id="panel-body">Loading…</div></div>
 </div>
