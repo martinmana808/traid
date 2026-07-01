@@ -160,6 +160,14 @@ def test_chip_hover_highlight():
     assert "sma50S" in html and "bbU" in html
 
 
+def test_panel_shift_hover_and_colored_volume():
+    html = render_chart_html(_payload())
+    assert "shiftHeld" in html
+    assert "function renderPanel" in html or "renderPanel = " in html or "renderPanel(" in html
+    assert "keydown" in html and "keyup" in html
+    assert "rgba(38,166,154,0.4)" in html and "rgba(239,83,80,0.4)" in html  # colored volume
+
+
 def test_session_index_links_each_entry():
     html = render_session_index("2026-06-28", [
         {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},

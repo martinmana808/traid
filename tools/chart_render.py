@@ -135,6 +135,7 @@ let syncing = false;
 let sel = null;
 let dragging = false;
 let dragStartX = 0;
+let shiftHeld = false;
 
 const _maskPanes = ['price','rsi','macd','stoch'];
 function hideMasks(){
@@ -171,7 +172,7 @@ function positionMasks(){
 function clearSelection(){
   sel = null;
   hideMasks();
-  updateSummaryPanel();
+  renderPanel();
 }
 
 // Subscribe all 4 charts; handlers use visibleCharts() to avoid touching collapsed panes
@@ -183,7 +184,7 @@ function clearSelection(){
     if(dst !== src){ try{ dst.timeScale().setVisibleLogicalRange(range); }catch(e){} }
   });
   syncing = false;
-  updateSummaryPanel();
+  renderPanel();
   positionMasks();
 }));
 
@@ -226,6 +227,14 @@ function lastDefinedInRange(arr,fromIdx,toIdx){
   const lo=Math.max(0,Math.floor(fromIdx)), hi=Math.min(arr.length-1,Math.ceil(toIdx));
   for(let i=hi;i>=lo;i--){ if(arr[i]&&arr[i].value!=null) return arr[i].value; }
   return null;
+}
+
+function latestTime(){
+  const c = DATA.resolutions[_currentRes] ? DATA.resolutions[_currentRes].candles : [];
+  return c.length ? c[c.length-1].time : null;
+}
+function renderPanel(){
+  if(sel){ updateSummaryPanel(); } else { const t=latestTime(); if(t!=null) showHoverPanel(t); }
 }
 
 function updateSummaryPanel(){
@@ -377,17 +386,7 @@ allPaneEntries.forEach(entry => {
     chsyncing = true;
     const active = activePaneEntries();
     if(param && param.time){
-      if(sel){
-        const _canArr = (DATA.resolutions[_currentRes]||{}).candles||[];
-        const _idx = _canArr.findIndex(p=>p.time===param.time);
-        let _loIdx = _canArr.findIndex(p=>p.time>=sel.from);
-        let _hiIdx = -1;
-        for(let _i=_canArr.length-1;_i>=0;_i--){ if(_canArr[_i].time<=sel.to){_hiIdx=_i;break;} }
-        if(_idx>=0 && _idx>=_loIdx && _idx<=_hiIdx){ showHoverPanel(param.time); }
-        else { updateSummaryPanel(); }
-      } else {
-        showHoverPanel(param.time);
-      }
+      if(shiftHeld && !dragging){ showHoverPanel(param.time); } else { renderPanel(); }
       active.forEach(({chart:dst,series:ds,map}) => {
         if(dst === entry.chart) return;
         const v = map().get(param.time);
@@ -395,7 +394,7 @@ allPaneEntries.forEach(entry => {
         else { try{ dst.clearCrosshairPosition(); }catch(e){} }
       });
     } else {
-      updateSummaryPanel();
+      renderPanel();
       active.forEach(({chart:dst}) => {
         if(dst === entry.chart) return;
         try{ dst.clearCrosshairPosition(); }catch(e){}
@@ -404,6 +403,10 @@ allPaneEntries.forEach(entry => {
     chsyncing = false;
   });
 });
+
+// Shift key tracking for panel hover mode
+document.addEventListener('keydown', function(e){ if(e.key==='Shift'){ shiftHeld=true; } });
+document.addEventListener('keyup',   function(e){ if(e.key==='Shift'){ shiftHeld=false; renderPanel(); } });
 
 // Indicator toggle chips
 document.querySelectorAll('.tog').forEach(chip => {
@@ -469,7 +472,11 @@ function loadResolution(res){
   bbU.setData(d.bollinger.upper);
   bbM.setData(d.bollinger.middle);
   bbL.setData(d.bollinger.lower);
-  vol.setData(d.volume);
+  vol.setData(d.volume.map(function(v,i){
+    var c = d.candles[i];
+    var up = c && c.close >= c.open;
+    return { time:v.time, value:v.value, color: up ? 'rgba(38,166,154,0.4)' : 'rgba(239,83,80,0.4)' };
+  }));
   sma50S.setData(d.sma50);
   sma200S.setData(d.sma200);
   rsiS.setData(d.rsi);
@@ -487,7 +494,7 @@ function loadResolution(res){
     lineWidth:1,lineStyle:2,axisLabelVisible:true,title:'R'})); }
   visibleCharts().forEach(c => c.timeScale().fitContent());
   positionMasks();
-  updateSummaryPanel();
+  renderPanel();
 }
 
 // Timeframe toggle
@@ -544,7 +551,7 @@ loadResolution(DATA.default);
     if(dist < 3){
       clearSelection();
     } else {
-      updateSummaryPanel();
+      renderPanel();
     }
   });
 })();
