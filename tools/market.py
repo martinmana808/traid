@@ -55,15 +55,18 @@ def quote(ticker, market=None):
         return error_response(f"quote failed for {sym}: {e}")
 
 
-def history(ticker, period, market=None):
+def history(ticker, period, market=None, interval="1d"):
     sym = normalize_ticker(ticker, market)
     try:
-        df = _yf().Ticker(sym).history(period=period)
+        df = _yf().Ticker(sym).history(period=period, interval=interval)
         if df.empty:
-            return error_response(f"no history for {sym} ({period})")
+            return error_response(f"no history for {sym} ({period}/{interval})")
+        # Intraday bars (e.g. 1h) share a calendar day, so a date-only stamp would
+        # collide — use a per-bar UNIX timestamp. Daily+ intervals keep the date.
+        intraday = interval.endswith(("h", "m"))
         rows = [
             {
-                "date": idx.date().isoformat(),
+                "date": (int(idx.timestamp()) if intraday else idx.date().isoformat()),
                 "open": round(float(r["Open"]), 4),
                 "high": round(float(r["High"]), 4),
                 "low": round(float(r["Low"]), 4),

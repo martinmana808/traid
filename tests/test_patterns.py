@@ -1,6 +1,6 @@
 from tools.patterns import (
     doji, hammer, shooting_star, bullish_engulfing, bearish_engulfing,
-    morning_star, evening_star, find_pivots,
+    morning_star, evening_star, find_pivots, support_resistance,
 )
 
 
@@ -68,3 +68,21 @@ def test_find_pivots_zigzag():
     piv = find_pivots(highs, lows, window=1)
     assert any(p["kind"] == "high" for p in piv)
     assert any(p["kind"] == "low" for p in piv)
+
+
+def test_support_resistance_picks_nearest_pivots():
+    # rising-then-falling sawtooth produces clear pivots around price 50
+    highs = [40, 45, 42, 55, 48, 60, 52, 58, 50, 54]
+    lows =  [30, 35, 32, 45, 38, 50, 42, 48, 40, 44]
+    sr = support_resistance(highs, lows, price=50.0)
+    assert sr["resistance"] >= 50.0
+    assert sr["support"] <= 50.0
+
+
+def test_support_resistance_falls_back_to_extremes():
+    # monotonic data: no pivot above/below price -> fall back to max high / min low
+    highs = [10, 11, 12, 13, 14, 15]
+    lows =  [9, 10, 11, 12, 13, 14]
+    sr = support_resistance(highs, lows, price=14.5)
+    assert sr["resistance"] == 15.0
+    assert sr["support"] == 9.0

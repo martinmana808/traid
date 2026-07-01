@@ -145,6 +145,16 @@ def find_pivots(highs, lows, window=2):
     return piv
 
 
+def support_resistance(highs, lows, price):
+    """Nearest pivot-based support/resistance around `price`, with extreme fallbacks."""
+    piv = find_pivots(highs, lows, window=3)
+    high_piv = [p["price"] for p in piv if p["kind"] == "high"]
+    low_piv = [p["price"] for p in piv if p["kind"] == "low"]
+    resistance = min([h for h in high_piv if h > price], default=max(highs))
+    support = max([lo for lo in low_piv if lo < price], default=min(lows))
+    return {"support": round(support, 2), "resistance": round(resistance, 2)}
+
+
 _MEANING = {
     "doji": "indecision / potential turning point",
     "hammer": "bullish reversal (buyers rejected lower prices)",
@@ -197,8 +207,8 @@ def analyze(ticker, market=None, period="3mo"):
     piv = find_pivots(highs, lows, window=3)
     high_piv = [p["price"] for p in piv if p["kind"] == "high"]
     low_piv = [p["price"] for p in piv if p["kind"] == "low"]
-    resistance = min([h for h in high_piv if h > price], default=round(max(highs), 2))
-    support = max([lo for lo in low_piv if lo < price], default=round(min(lows), 2))
+    sr = support_resistance(highs, lows, price)
+    support, resistance = sr["support"], sr["resistance"]
     if len(high_piv) >= 2 and len(low_piv) >= 2:
         swing = ("rising" if high_piv[-1] > high_piv[-2] and low_piv[-1] > low_piv[-2]
                  else "falling" if high_piv[-1] < high_piv[-2] and low_piv[-1] < low_piv[-2]

@@ -7,6 +7,9 @@ venv/
 # Local environment
 .env
 
+# Generated charts — personal output, never commit
+charts/
+
 # Personal data — never commit (this is a public repo)
 data/portfolio.json
 data/profile.md

@@ -119,6 +119,18 @@ def analyze(ticker, market=None):
         + f", {h_tag}."
     )
 
+    snapshot = {
+        "market_cap": info.get("marketCap"),
+        "avg_volume": info.get("averageVolume") or info.get("averageVolume10days"),
+        "dividend_yield": _pct(info.get("dividendYield")),
+        "next_earnings": info.get("earningsTimestamp"),
+        "week52_high": _round(info.get("fiftyTwoWeekHigh")),
+        "week52_low": _round(info.get("fiftyTwoWeekLow")),
+        "analyst_rating": info.get("recommendationKey"),
+        "analyst_target": _round(info.get("targetMeanPrice")),
+        "analyst_count": info.get("numberOfAnalystOpinions"),
+    }
+
     return {
         "ticker": sym,
         "name": info.get("shortName"),
@@ -142,6 +154,7 @@ def analyze(ticker, market=None):
             "total_cash": info.get("totalCash"), "total_debt": info.get("totalDebt"),
             "tag": h_tag, "reading": h_read,
         },
+        "snapshot": snapshot,
         "summary": summary,
         "note": (
             "Latest YoY figures from public data — not a hand-audited multi-year model. "
