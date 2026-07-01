@@ -437,6 +437,28 @@ document.querySelectorAll('.tog').forEach(chip => {
   });
 });
 
+// Chip hover highlight map — emphasize the series a chip controls on mouseenter, restore on mouseleave
+const _hoverMap = {
+  bb:     { on:()=>{[bbU,bbM,bbL].forEach(s=>s.applyOptions({lineWidth:3}));},
+            off:()=>{[bbU,bbM,bbL].forEach(s=>s.applyOptions({lineWidth:1}));} },
+  vol:    { on:()=>{ vol.applyOptions({color:'#4a5578'}); },
+            off:()=>{ vol.applyOptions({color:'#2b3145'}); } },
+  sma50:  { on:()=>{ sma50S.applyOptions({lineWidth:4}); },
+            off:()=>{ sma50S.applyOptions({lineWidth:2}); } },
+  sma200: { on:()=>{ sma200S.applyOptions({lineWidth:4}); },
+            off:()=>{ sma200S.applyOptions({lineWidth:2}); } },
+  rsi:    { on:()=>{ rsiS.applyOptions({lineWidth:3}); },
+            off:()=>{ rsiS.applyOptions({lineWidth:1}); } },
+  macd:   { on:()=>{[macdLine,macdSig].forEach(s=>s.applyOptions({lineWidth:3}));},
+            off:()=>{[macdLine,macdSig].forEach(s=>s.applyOptions({lineWidth:1}));} },
+  stoch:  { on:()=>{[kS,dS].forEach(s=>s.applyOptions({lineWidth:3}));},
+            off:()=>{[kS,dS].forEach(s=>s.applyOptions({lineWidth:1}));} },
+};
+document.querySelectorAll('.tog').forEach(chip => {
+  chip.addEventListener('mouseenter', () => { const h=_hoverMap[chip.dataset.toggle]; if(h) h.on(); });
+  chip.addEventListener('mouseleave', () => { const h=_hoverMap[chip.dataset.toggle]; if(h) h.off(); });
+});
+
 function loadResolution(res){
   clearSelection();
   _currentRes = res;

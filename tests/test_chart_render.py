@@ -151,6 +151,15 @@ def test_render_has_moving_averages():
     assert "golden cross" in html.lower() or "death cross" in html.lower()
 
 
+def test_chip_hover_highlight():
+    html = render_chart_html(_payload())
+    # hover-highlight map and wiring must be present
+    assert "mouseenter" in html or "mouseover" in html
+    assert "lineWidth:3" in html or "lineWidth: 3" in html   # thicken on hover
+    # covers the MA and bollinger targets at least
+    assert "sma50S" in html and "bbU" in html
+
+
 def test_session_index_links_each_entry():
     html = render_session_index("2026-06-28", [
         {"ticker": "META", "call": "buy", "filename": "META-2026-06-28-001.html"},
