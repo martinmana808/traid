@@ -120,12 +120,24 @@ def test_fundamentals_reading_on_own_line():
 
 def test_render_has_range_selection():
     html = render_chart_html(_payload())
-    assert 'id="mask-left"' in html and 'id="mask-right"' in html
+    assert 'id="mask-left-price"' in html and 'id="mask-right-price"' in html
     assert "dim-mask" in html
     assert "shiftKey" in html
     assert "coordinateToTime" in html
     assert "timeToCoordinate" in html
     assert "clearSelection" in html
+
+
+def test_selection_spans_all_panes_and_has_clear_button():
+    html = render_chart_html(_payload())
+    # a left+right mask for each of the 4 panes → at least 8 dim-mask elements
+    assert html.count("dim-mask") >= 8
+    for pane in ("price", "rsi", "macd", "stoch"):
+        assert f"mask-left-{pane}" in html and f"mask-right-{pane}" in html
+    # clear (X) button
+    assert 'id="sel-clear"' in html
+    # hover restriction references the selection bounds
+    assert "sel.from" in html and "sel.to" in html
 
 
 def test_session_index_links_each_entry():

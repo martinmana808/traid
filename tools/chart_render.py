@@ -55,19 +55,20 @@ _TEMPLATE = """<!doctype html>
     pointer-events:none;display:none;z-index:100;white-space:normal}
   .label.hidden{display:none}
   .dim-mask{position:absolute;top:0;bottom:0;background:rgba(14,14,18,0.6);pointer-events:none;z-index:3;display:none}
+  #sel-clear{position:absolute;z-index:6;cursor:pointer;pointer-events:auto;display:none;background:#1c1f2b;color:#9aa0ad;border:1px solid #2a2e39;border-radius:4px;padding:1px 6px;font-size:12px;top:4px;}
 </style></head><body>
 <div id="header"><span id="title">__TITLE__</span><span id="subtitle">__SUBTITLE__</span></div>
 <div id="timeframe">__TIMEFRAME__</div>
 <div id="layout">
 <div id="charts-col">
 <div class="label">Price · Bollinger · Volume</div>
-<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb">BB</span><span class="tog" data-toggle="vol">Vol</span></div><div id="mask-left" class="dim-mask"></div><div id="mask-right" class="dim-mask"></div></div>
+<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb">BB</span><span class="tog" data-toggle="vol">Vol</span></div><div id="mask-left-price" class="dim-mask"></div><div id="mask-right-price" class="dim-mask"></div><div id="sel-clear">×</div></div>
 <div class="label" data-label-for="rsi">RSI (14)</div>
-<div class="pane" id="rsi"><div class="tog-cluster"><span class="tog" data-toggle="rsi">RSI</span></div></div>
+<div class="pane" id="rsi"><div class="tog-cluster"><span class="tog" data-toggle="rsi">RSI</span></div><div id="mask-left-rsi" class="dim-mask"></div><div id="mask-right-rsi" class="dim-mask"></div></div>
 <div class="label" data-label-for="macd">MACD (12,26,9)</div>
-<div class="pane" id="macd"><div class="tog-cluster"><span class="tog" data-toggle="macd">MACD</span></div></div>
+<div class="pane" id="macd"><div class="tog-cluster"><span class="tog" data-toggle="macd">MACD</span></div><div id="mask-left-macd" class="dim-mask"></div><div id="mask-right-macd" class="dim-mask"></div></div>
 <div class="label" data-label-for="stoch">Stochastic (14,3)</div>
-<div class="pane" id="stoch"><div class="tog-cluster"><span class="tog" data-toggle="stoch">STOCH</span></div></div>
+<div class="pane" id="stoch"><div class="tog-cluster"><span class="tog" data-toggle="stoch">STOCH</span></div><div id="mask-left-stoch" class="dim-mask"></div><div id="mask-right-stoch" class="dim-mask"></div></div>
 </div>
 <div id="panel"><h3>Info</h3><div id="panel-body">Loading…</div></div>
 </div>
@@ -128,13 +129,15 @@ let sel = null;
 let dragging = false;
 let dragStartX = 0;
 
+const _maskPanes = ['price','rsi','macd','stoch'];
 function hideMasks(){
-  document.getElementById('mask-left').style.display='none';
-  document.getElementById('mask-right').style.display='none';
+  _maskPanes.forEach(p => {
+    document.getElementById('mask-left-'+p).style.display='none';
+    document.getElementById('mask-right-'+p).style.display='none';
+  });
+  document.getElementById('sel-clear').style.display='none';
 }
 function positionMasks(){
-  const mL = document.getElementById('mask-left');
-  const mR = document.getElementById('mask-right');
   if(!sel){ hideMasks(); return; }
   const paneEl = document.getElementById('price');
   const paneWidth = paneEl.offsetWidth;
@@ -144,12 +147,19 @@ function positionMasks(){
   if(toX   == null) toX   = paneWidth;
   fromX = Math.max(0, Math.min(paneWidth, fromX));
   toX   = Math.max(0, Math.min(paneWidth, toX));
-  mL.style.left = '0';
-  mL.style.width = fromX + 'px';
-  mL.style.display = 'block';
-  mR.style.left = toX + 'px';
-  mR.style.width = (paneWidth - toX) + 'px';
-  mR.style.display = 'block';
+  _maskPanes.forEach(p => {
+    const mL = document.getElementById('mask-left-'+p);
+    const mR = document.getElementById('mask-right-'+p);
+    mL.style.left = '0';
+    mL.style.width = fromX + 'px';
+    mL.style.display = 'block';
+    mR.style.left = toX + 'px';
+    mR.style.width = (paneWidth - toX) + 'px';
+    mR.style.display = 'block';
+  });
+  const sc = document.getElementById('sel-clear');
+  sc.style.left = Math.max(0, toX - 24) + 'px';
+  sc.style.display = 'block';
 }
 function clearSelection(){
   sel = null;
@@ -357,7 +367,17 @@ allPaneEntries.forEach(entry => {
     chsyncing = true;
     const active = activePaneEntries();
     if(param && param.time){
-      showHoverPanel(param.time);
+      if(sel){
+        const _canArr = (DATA.resolutions[_currentRes]||{}).candles||[];
+        const _idx = _canArr.findIndex(p=>p.time===param.time);
+        let _loIdx = _canArr.findIndex(p=>p.time>=sel.from);
+        let _hiIdx = -1;
+        for(let _i=_canArr.length-1;_i>=0;_i--){ if(_canArr[_i].time<=sel.to){_hiIdx=_i;break;} }
+        if(_idx>=0 && _idx>=_loIdx && _idx<=_hiIdx){ showHoverPanel(param.time); }
+        else { updateSummaryPanel(); }
+      } else {
+        showHoverPanel(param.time);
+      }
       active.forEach(({chart:dst,series:ds,map}) => {
         if(dst === entry.chart) return;
         const v = map().get(param.time);
@@ -442,6 +462,10 @@ loadResolution(DATA.default);
 // Shift+drag range selection on price pane
 (function(){
   const priceEl = document.getElementById('price');
+  document.getElementById('sel-clear').addEventListener('click', function(e){
+    e.stopPropagation();
+    clearSelection();
+  });
   priceEl.addEventListener('mousedown', function(e){
     if(e.target.closest('.tog')) return;  // indicator toggle chip — don't touch selection
     if(e.shiftKey){
