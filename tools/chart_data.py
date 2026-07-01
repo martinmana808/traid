@@ -78,6 +78,52 @@ def series_from_bars(bars):
 RESOLUTIONS = [("1h", "3mo"), ("1d", "5y"), ("1wk", "max"), ("1mo", "max")]
 
 
+def _perf(closes):
+    """Return % changes over standard lookback windows (None if not enough history)."""
+    def pct(n):
+        if len(closes) <= n:
+            return None
+        return round((closes[-1] / closes[-1 - n] - 1) * 100, 2)
+    return {"w1": pct(5), "m1": pct(21), "m3": pct(63), "y1": pct(252), "ytd": None}
+
+
+def _technicals(closes, highs, lows):
+    """Simple mechanical tally of trend + momentum at the latest bar."""
+    if len(closes) < 30:
+        return {"score": 0, "label": "Neutral"}
+    price = closes[-1]
+    s50 = sma(closes, 50).iloc[-1] if len(closes) >= 50 else None
+    s200 = sma(closes, 200).iloc[-1] if len(closes) >= 200 else None
+    macd_line, sig, _ = macd(closes)
+    r = rsi(closes).iloc[-1]
+    k, d = stochastic(highs, lows, closes)
+    signals = []
+    if s50 is not None:
+        signals.append(price > s50)
+    if s200 is not None:
+        signals.append(price > s200)
+    if s50 is not None and s200 is not None:
+        signals.append(s50 > s200)
+    signals.append(macd_line.iloc[-1] > sig.iloc[-1])
+    if r == r:  # NaN-safe
+        signals.append(r > 50)
+    kk, dd = k.iloc[-1], d.iloc[-1]
+    if kk == kk and dd == dd:  # NaN-safe
+        signals.append(kk > dd)
+    net = sum(1 if s else -1 for s in signals)
+    if net >= 4:
+        label = "Strong buy"
+    elif net >= 2:
+        label = "Buy"
+    elif net <= -4:
+        label = "Strong sell"
+    elif net <= -2:
+        label = "Sell"
+    else:
+        label = "Neutral"
+    return {"score": net, "label": label}
+
+
 def build_chart_payload(ticker, market=None, period=None):
     resolutions = {}
     for res, default_period in RESOLUTIONS:
@@ -102,13 +148,32 @@ def build_chart_payload(ticker, market=None, period=None):
     for r in resolutions.values():
         r.pop("_bars_last_close", None)
         r.pop("_bars_last_date", None)
+    # Compute performance and technicals from the daily resolution's candles
+    dcandles = resolutions[default]["candles"]
+    dcloses = [c["close"] for c in dcandles]
+    dhighs = [c["high"] for c in dcandles]
+    dlows = [c["low"] for c in dcandles]
+    perf = _perf(dcloses)
+    # YTD: % change from the first close of the latest calendar year present in dates
+    dates = [c["time"] for c in dcandles if isinstance(c["time"], str)]
+    if dates and dcloses:
+        yr = dates[-1][:4]
+        first_of_year = next(
+            (i for i, c in enumerate(dcandles)
+             if isinstance(c["time"], str) and c["time"][:4] == yr),
+            None,
+        )
+        if first_of_year is not None and dcloses[first_of_year]:
+            perf["ytd"] = round((dcloses[-1] / dcloses[first_of_year] - 1) * 100, 2)
+    tech = _technicals(dcloses, dhighs, dlows)
     try:
         f = fundamentals_analyze(ticker, market)
     except Exception:  # noqa: BLE001 — fundamentals are optional, never fatal
         f = None
     fundamentals = None if (not f or "error" in f) else f
     return {"ticker": sym, "as_of": as_of, "price": price,
-            "default": default, "resolutions": resolutions, "fundamentals": fundamentals}
+            "default": default, "resolutions": resolutions, "fundamentals": fundamentals,
+            "performance": perf, "technicals": tech}
 
 
 def build_chart_data(ticker, market=None, period="1y"):

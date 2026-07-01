@@ -150,3 +150,13 @@ def test_series_includes_moving_averages():
     # with only 60 bars, sma50 has some defined points, sma200 has none (all whitespace)
     assert any("value" in p for p in out["sma50"])
     assert all("value" not in p for p in out["sma200"])
+
+
+def test_payload_has_performance_and_technicals(monkeypatch):
+    def fake_history(t, p, m=None, interval="1d"):
+        return {"ticker": "NVDA", "period": p, "bars": _bars(300)}
+    monkeypatch.setattr(cd, "history", fake_history)
+    monkeypatch.setattr(cd, "fundamentals_analyze", lambda t, m=None: None)
+    pay = cd.build_chart_payload("nvda")
+    assert set(pay["performance"]) == {"w1", "m1", "m3", "ytd", "y1"}
+    assert pay["technicals"]["label"] in ("Strong sell", "Sell", "Neutral", "Buy", "Strong buy")
