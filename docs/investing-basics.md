@@ -53,6 +53,19 @@ Compares a short-term price average to a longer-term one. Two lines (MACD + a "s
 
 ---
 
+## Moving averages — MA50 & MA200 (the trend lines)
+
+A **moving average (MA)** just smooths the price: it plots the *average close* over the last N days, so the day-to-day jiggle disappears and you see the underlying **trend**. (These are *trend* gauges, not momentum ones like RSI.)
+
+- **MA50 (50-day)** — the *medium-term* trend. Reacts fairly quickly.
+- **MA200 (200-day)** — the *long-term* trend, the big one everyone watches. **Price above the 200-day = the trend is healthy; below it = caution.**
+- **Golden cross** = MA50 crosses *above* MA200 → long-term momentum turning bullish. **Death cross** = MA50 crosses *below* MA200 → bearish. Widely watched, but **lagging** — they confirm a turn after it's underway, they don't predict it.
+- **Why the MA200 line looks "shorter" on the chart:** it needs 200 days of data before it can be drawn, so it only starts once there's enough history — the MA50 (needs 50 days) covers more of the chart. *Bigger number = starts later = shorter line.*
+
+**We look for:** price above a rising MA200 = a solid long-term backdrop for owning a good business. Price *below* the MA50 but *above* the MA200 = a short-term dip inside a healthy trend (often exactly what a patient buyer waits for).
+
+---
+
 ## How to use them together (for a value buyer)
 
 **PEG decides *what's worth buying*.** Then RSI / Stochastic / MACD just keep you from buying at a euphoric top:
