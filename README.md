@@ -59,8 +59,9 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 # RSI/MACD/stochastic sub-panes. Self-contained HTML (TradingView lightweight-charts).
 # Linked panes (x-axis zoom/pan sync), synced crosshair across all 4 panes, right panel
 # showing visible-range summary (or hovered candle), and 1H/1D/1W/1M timeframe toggle buttons.
-# Per-graph indicator toggles (BB/Vol chips, collapse chips for RSI/MACD/Stochastic),
-# richer side panel with fundamentals snapshot (P/E, PEG, margin, growth) plus volatility/range stats,
+# 50/200-day moving averages on the price pane. Per-graph indicator toggles via color-coded chips
+# (BB/Vol/MA50/MA200 + collapse chips for RSI/MACD/Stochastic),
+# richer side panel with fundamentals snapshot (P/E, PEG, margin, growth), volatility/range stats, a golden/death-cross trend read,
 # and educational hover-tooltips on each metric. Shift+drag the price chart to select a period
 # — all panes dim to the selection, the side panel and hover recompute for just that range, and
 # an (X) button clears it. Live re-pull, or a frozen per-call snapshot. Charts are gitignored (local only).
