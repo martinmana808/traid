@@ -11,7 +11,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.indicators import rsi, macd, bollinger, stochastic, atr  # noqa: E402
+from tools.indicators import rsi, macd, bollinger, stochastic, atr, sma  # noqa: E402
 from tools.patterns import support_resistance  # noqa: E402
 from tools.market import history, normalize_ticker  # noqa: E402
 from tools.fundamentals import analyze as fundamentals_analyze  # noqa: E402
@@ -68,6 +68,8 @@ def series_from_bars(bars):
         },
         "stochastic": {"k": _line(dates, k_series), "d": _line(dates, d_series)},
         "atr": _line(dates, atr_series),
+        "sma50": _line(dates, sma(closes, 50)),
+        "sma200": _line(dates, sma(closes, 200)),
         "support": sr["support"],
         "resistance": sr["resistance"],
     }

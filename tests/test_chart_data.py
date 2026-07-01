@@ -140,3 +140,13 @@ def test_payload_fundamentals_none_on_error(monkeypatch):
     monkeypatch.setattr(cd, "fundamentals_analyze", lambda t, m=None: {"error": "no data"})
     pay = cd.build_chart_payload("nvda")
     assert pay["fundamentals"] is None
+
+
+def test_series_includes_moving_averages():
+    out = series_from_bars(_bars(60))
+    assert "sma50" in out and "sma200" in out
+    assert len(out["sma50"]) == 60 and len(out["sma200"]) == 60
+    assert [p["time"] for p in out["sma50"]] == [c["time"] for c in out["candles"]]
+    # with only 60 bars, sma50 has some defined points, sma200 has none (all whitespace)
+    assert any("value" in p for p in out["sma50"])
+    assert all("value" not in p for p in out["sma200"])
