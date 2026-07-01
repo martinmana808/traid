@@ -27,6 +27,11 @@ Open this project in Claude Code and just talk to it:
 
 The `traid-analyst` skill loads your portfolio, pulls live data, reasons, suggests, and logs.
 
+## Learn
+
+Plain-English basics (PEG, RSI, Stochastic, MACD, what "bargain" means for stocks):
+[`docs/investing-basics.md`](docs/investing-basics.md). Or just ask TRaid to explain any term.
+
 ## Your data (gitignored — local only, never pushed)
 
 - `data/portfolio.json` — holdings, cash, risk tolerance
