@@ -62,8 +62,10 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 # 50/200-day moving averages on the price pane. Per-graph indicator toggles via color-coded chips
 # (BB/Vol/MA50/MA200 + collapse chips for RSI/MACD/Stochastic),
 # richer side panel with fundamentals snapshot (P/E, PEG, margin, growth), volatility/range stats, a golden/death-cross trend read,
-# and educational hover-tooltips on each metric. Shift+drag the price chart to select a period
-# — all panes dim to the selection, the side panel and hover recompute for just that range, and
+# and educational hover-tooltips on each metric. Side panel also includes key facts (market cap, avg volume, 52-week range,
+# next earnings, dividend yield), multi-timeframe performance (1W/1M/3M/YTD/1Y % colored), analyst rating and price target,
+# and a derived technicals rating (a mechanical confluence tally for context, not advice).
+# Shift+drag the price chart to select a period — all panes dim to the selection, the side panel and hover recompute for just that range, and
 # an (X) button clears it. Live re-pull, or a frozen per-call snapshot. Charts are gitignored (local only).
 ./.venv/bin/python tools/chart.py NVDA
 ./.venv/bin/python tools/chart.py AIR --market NZX --period 2y
