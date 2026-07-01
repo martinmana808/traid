@@ -18,17 +18,18 @@ _TEMPLATE = """<!doctype html>
 <style>
   html,body{margin:0;height:100dvh;background:#0e0e12;color:#d1d4dc;font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif}
   body{display:flex;flex-direction:column;overflow:hidden}
-  #header{padding:10px 14px;border-bottom:1px solid #1c1f2b}
+  #header{padding:10px 14px;border-bottom:1px solid #1c1f2b;display:flex;align-items:center}
   #title{font-weight:600;font-size:15px}
   #subtitle{color:#9aa0ad;margin-left:8px}
   .label{padding:2px 14px;color:#787b86;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
   .pane + .label{border-top: 1px solid #c8ccd4;padding-top:4px}
   .pane{width:100%;min-height:0;position:relative}
-  .pane.collapsed{flex:0 0 0;min-height:0;height:0;overflow:hidden}
+  #rsi.collapsed,#macd.collapsed,#stoch.collapsed{flex-basis:0;min-height:0;height:0;overflow:hidden}
   .tog-cluster{position:absolute;top:4px;left:4px;z-index:5;display:flex;gap:4px}
   .tog{background:#1c1f2b;color:var(--c,#9aa0ad);border:1px solid var(--c,#2a2e39);border-radius:3px;
     padding:2px 6px;cursor:pointer;font-size:11px;user-select:none}
   .tog.off{color:#454851;border-color:#2a2e39}
+  .tog-sep{align-self:stretch;width:1px;background:#2a2e39;margin:0 3px}
   #timeframe{padding:6px 14px;display:flex;gap:6px;border-bottom:1px solid #1c1f2b}
   #timeframe button{background:#1c1f2b;color:#9aa0ad;border:1px solid #2a2e39;border-radius:4px;
     padding:3px 10px;cursor:pointer;font-size:12px}
@@ -37,8 +38,8 @@ _TEMPLATE = """<!doctype html>
   #legend b{color:#9aa0ad}
   #layout{display:flex;flex-direction:row;flex:1;min-height:0}
   #charts-col{flex:1;min-width:0;display:flex;flex-direction:column}
-  #price{flex:3;min-height:220px}
-  #rsi,#macd,#stoch{flex:1;min-height:90px}
+  #price{flex:1 1 auto;min-height:220px}
+  #rsi,#macd,#stoch{flex:0 0 150px}
   #panel{width:230px;flex-shrink:0;background:#0b0d14;border-left:1px solid #1c1f2b;
     padding:10px 12px;overflow-y:auto;font-size:12px;line-height:1.6;color:#9aa0ad}
   #panel h3{margin:0 0 6px;font-size:12px;color:#d1d4dc;text-transform:uppercase;letter-spacing:.05em}
@@ -57,18 +58,18 @@ _TEMPLATE = """<!doctype html>
   .dim-mask{position:absolute;top:0;bottom:0;background:rgba(14,14,18,0.6);pointer-events:none;z-index:3;display:none}
   #sel-clear{position:absolute;z-index:6;cursor:pointer;pointer-events:auto;display:none;background:#1c1f2b;color:#9aa0ad;border:1px solid #2a2e39;border-radius:4px;padding:1px 6px;font-size:12px;top:4px;}
 </style></head><body>
-<div id="header"><span id="title">__TITLE__</span><span id="subtitle">__SUBTITLE__</span></div>
-<div id="timeframe">__TIMEFRAME__</div>
+<div id="header"><span id="title">__TITLE__</span><span id="subtitle">__SUBTITLE__</span><div id="timeframe">__TIMEFRAME__</div></div>
+
 <div id="layout">
 <div id="charts-col">
 <div class="label">Price · Bollinger · Volume</div>
-<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb" style="--c:#5b8def">BB</span><span class="tog" data-toggle="vol" style="--c:#8891a5">Vol</span><span class="tog" data-toggle="sma50" style="--c:#e0a73e">MA50</span><span class="tog" data-toggle="sma200" style="--c:#b39ddb">MA200</span></div><div id="mask-left-price" class="dim-mask"></div><div id="mask-right-price" class="dim-mask"></div><div id="sel-clear">×</div></div>
+<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb" style="--c:#5b8def">BB</span><span class="tog" data-toggle="vol" style="--c:#8891a5">Vol</span><span class="tog" data-toggle="sma50" style="--c:#e0a73e">MA50</span><span class="tog" data-toggle="sma200" style="--c:#b39ddb">MA200</span><span class="tog-sep"></span><span class="tog" data-toggle="rsi" style="--c:#e0a73e">RSI</span><span class="tog" data-toggle="macd" style="--c:#5b8def">MACD</span><span class="tog" data-toggle="stoch" style="--c:#5b8def">STOCH</span></div><div id="mask-left-price" class="dim-mask"></div><div id="mask-right-price" class="dim-mask"></div><div id="sel-clear">×</div></div>
 <div class="label" data-label-for="rsi">RSI (14)</div>
-<div class="pane" id="rsi"><div class="tog-cluster"><span class="tog" data-toggle="rsi" style="--c:#e0a73e">RSI</span></div><div id="mask-left-rsi" class="dim-mask"></div><div id="mask-right-rsi" class="dim-mask"></div></div>
+<div class="pane" id="rsi"><div id="mask-left-rsi" class="dim-mask"></div><div id="mask-right-rsi" class="dim-mask"></div></div>
 <div class="label" data-label-for="macd">MACD (12,26,9)</div>
-<div class="pane" id="macd"><div class="tog-cluster"><span class="tog" data-toggle="macd" style="--c:#5b8def">MACD</span></div><div id="mask-left-macd" class="dim-mask"></div><div id="mask-right-macd" class="dim-mask"></div></div>
+<div class="pane" id="macd"><div id="mask-left-macd" class="dim-mask"></div><div id="mask-right-macd" class="dim-mask"></div></div>
 <div class="label" data-label-for="stoch">Stochastic (14,3)</div>
-<div class="pane" id="stoch"><div class="tog-cluster"><span class="tog" data-toggle="stoch" style="--c:#5b8def">STOCH</span></div><div id="mask-left-stoch" class="dim-mask"></div><div id="mask-right-stoch" class="dim-mask"></div></div>
+<div class="pane" id="stoch"><div id="mask-left-stoch" class="dim-mask"></div><div id="mask-right-stoch" class="dim-mask"></div></div>
 </div>
 <div id="panel"><h3>Info</h3><div id="panel-body">Loading…</div></div>
 </div>
