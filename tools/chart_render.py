@@ -446,7 +446,10 @@ document.querySelectorAll('.tog').forEach(chip => {
       const labelEl = document.querySelector(`[data-label-for="${t}"]`);
       if(labelEl) labelEl.classList.toggle('hidden', nowCollapsed);
       updateBottomAxis();
-      visibleCharts().forEach(c => c.timeScale().fitContent());
+      // preserve the current zoom (don't fitContent): sync visible panes to the price range,
+      // which also brings a just-expanded pane to the current view
+      const _r = price.timeScale().getVisibleLogicalRange();
+      if(_r){ visibleCharts().forEach(c => { try{ c.timeScale().setVisibleLogicalRange(_r); }catch(e){} }); }
     }
   });
 });
