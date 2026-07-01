@@ -61,8 +61,9 @@ The `traid-analyst` skill loads your portfolio, pulls live data, reasons, sugges
 # showing visible-range summary (or hovered candle), and 1H/1D/1W/1M timeframe toggle buttons.
 # Per-graph indicator toggles (BB/Vol chips, collapse chips for RSI/MACD/Stochastic),
 # richer side panel with fundamentals snapshot (P/E, PEG, margin, growth) plus volatility/range stats,
-# and educational hover-tooltips on each metric. Shift+drag the price chart to select a period 
-# (dims the rest; the side panel recomputes for that range; click to clear). Live re-pull, or a frozen per-call snapshot. Charts are gitignored (local only).
+# and educational hover-tooltips on each metric. Shift+drag the price chart to select a period
+# — all panes dim to the selection, the side panel and hover recompute for just that range, and
+# an (X) button clears it. Live re-pull, or a frozen per-call snapshot. Charts are gitignored (local only).
 ./.venv/bin/python tools/chart.py NVDA
 ./.venv/bin/python tools/chart.py AIR --market NZX --period 2y
 ./.venv/bin/python tools/chart.py META --snapshot --call-id 2026-06-28-001
