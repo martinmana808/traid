@@ -44,6 +44,9 @@ _TEMPLATE = """<!doctype html>
     padding:10px 12px;overflow-y:auto;font-size:12px;line-height:1.6;color:#9aa0ad}
   #panel h3{margin:0 0 6px;font-size:12px;color:#d1d4dc;text-transform:uppercase;letter-spacing:.05em}
   #panel .row{display:flex;justify-content:space-between;margin:2px 0}
+  #panel .row2{display:flex;margin:2px 0}
+  #panel .row2 .cell{flex:1;display:flex;justify-content:space-between}
+  #panel .row2 .cell:first-child{margin-right:14px}
   #panel .key{color:#787b86}
   #panel .val{color:#d1d4dc;font-weight:600}
   #panel .read{display:block;color:#e0a73e;font-size:11px;white-space:normal;margin:1px 0 4px}
@@ -63,7 +66,7 @@ _TEMPLATE = """<!doctype html>
 <div id="layout">
 <div id="charts-col">
 <div class="label">Price · Bollinger · Volume</div>
-<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb" style="--c:#5b8def">BB</span><span class="tog" data-toggle="vol" style="--c:#8891a5">Vol</span><span class="tog" data-toggle="sma50" style="--c:#e0a73e">MA50</span><span class="tog" data-toggle="sma200" style="--c:#b39ddb">MA200</span><span class="tog-sep"></span><span class="tog" data-toggle="rsi" style="--c:#e0a73e">RSI</span><span class="tog" data-toggle="macd" style="--c:#5b8def">MACD</span><span class="tog" data-toggle="stoch" style="--c:#5b8def">STOCH</span></div><div id="mask-left-price" class="dim-mask"></div><div id="mask-right-price" class="dim-mask"></div><div id="sel-clear">×</div></div>
+<div class="pane" id="price"><div class="tog-cluster"><span class="tog" data-toggle="bb" style="--c:#5b8def">BB</span><span class="tog" data-toggle="vol" style="--c:#8891a5">Vol</span><span class="tog" data-toggle="sma50" style="--c:#e0a73e">MA50</span><span class="tog" data-toggle="sma200" style="--c:#f5d76e">MA200</span><span class="tog-sep"></span><span class="tog" data-toggle="rsi" style="--c:#e0a73e">RSI</span><span class="tog" data-toggle="macd" style="--c:#5b8def">MACD</span><span class="tog" data-toggle="stoch" style="--c:#5b8def">STOCH</span></div><div id="mask-left-price" class="dim-mask"></div><div id="mask-right-price" class="dim-mask"></div><div id="sel-clear">×</div></div>
 <div class="label" data-label-for="rsi">RSI (14)</div>
 <div class="pane" id="rsi"><div id="mask-left-rsi" class="dim-mask"></div><div id="mask-right-rsi" class="dim-mask"></div></div>
 <div class="label" data-label-for="macd">MACD (12,26,9)</div>
@@ -94,19 +97,20 @@ const macdC = mk('macd',140,false);
 const stoch = mk('stoch',140,true);
 
 // Series created once
+// volume FIRST so it renders behind the candles
+const vol  = price.addHistogramSeries({priceScaleId:'',priceFormat:{type:'volume'},color:'#2b3145'});
+vol.priceScale().applyOptions({scaleMargins:{top:0.82,bottom:0}});
 const candles = price.addCandlestickSeries({upColor:'#26a69a',downColor:'#ef5350',
   borderVisible:false,wickUpColor:'#26a69a',wickDownColor:'#ef5350'});
 const bbU = price.addLineSeries({color:'#5b8def',lineWidth:1});
-const bbM = price.addLineSeries({color:'#787b86',lineWidth:1});
+const bbM = price.addLineSeries({color:'#9db9ff',lineWidth:1});
 const bbL = price.addLineSeries({color:'#5b8def',lineWidth:1});
-const vol  = price.addHistogramSeries({priceScaleId:'',priceFormat:{type:'volume'},color:'#2b3145'});
-vol.priceScale().applyOptions({scaleMargins:{top:0.82,bottom:0}});
 const sma50S  = price.addLineSeries({color:'#e0a73e',lineWidth:2});
-const sma200S = price.addLineSeries({color:'#b39ddb',lineWidth:2});
+const sma200S = price.addLineSeries({color:'#f5d76e',lineWidth:2});
 
 const rsiS = rsiC.addLineSeries({color:'#e0a73e',lineWidth:1});
-rsiS.createPriceLine({price:70,color:'#ef5350',lineStyle:2,title:'70'});
-rsiS.createPriceLine({price:30,color:'#26a69a',lineStyle:2,title:'30'});
+rsiS.createPriceLine({price:70,color:'#c8ccd4',lineStyle:2,title:''});
+rsiS.createPriceLine({price:30,color:'#c8ccd4',lineStyle:2,title:''});
 
 const macdHist = macdC.addHistogramSeries({});
 const macdLine = macdC.addLineSeries({color:'#5b8def',lineWidth:1});
@@ -114,8 +118,8 @@ const macdSig  = macdC.addLineSeries({color:'#e0a73e',lineWidth:1});
 
 const kS = stoch.addLineSeries({color:'#5b8def',lineWidth:1});
 const dS = stoch.addLineSeries({color:'#e0a73e',lineWidth:1});
-kS.createPriceLine({price:80,color:'#ef5350',lineStyle:2,title:'80'});
-kS.createPriceLine({price:20,color:'#26a69a',lineStyle:2,title:'20'});
+kS.createPriceLine({price:80,color:'#c8ccd4',lineStyle:2,title:''});
+kS.createPriceLine({price:20,color:'#c8ccd4',lineStyle:2,title:''});
 
 // Per-pane on/off state (price is always on)
 const paneState = {rsi:true, macd:true, stoch:true};
@@ -286,10 +290,8 @@ function updateSummaryPanel(){
   const distR = (d.resistance!=null&&C>0)?((d.resistance/C-1)*100):null;
   document.getElementById('panel-body').innerHTML=panelHeader+`
 <div class="row"><span class="key">Range</span><span class="val">${first.time} → ${last.time}</span></div>
-<div class="row"><span class="key">O</span><span class="val">${fmt(O)}</span></div>
-<div class="row"><span class="key">H (vis)</span><span class="val">${fmt(H)}</span></div>
-<div class="row"><span class="key">L (vis)</span><span class="val">${fmt(L)}</span></div>
-<div class="row"><span class="key">C</span><span class="val">${fmt(C)}</span></div>
+<div class="row2"><span class="cell"><span class="key">O</span><span class="val">${fmt(O)}</span></span><span class="cell"><span class="key">H</span><span class="val">${fmt(H)}</span></span></div>
+<div class="row2"><span class="cell"><span class="key">L</span><span class="val">${fmt(L)}</span></span><span class="cell"><span class="key">C</span><span class="val">${fmt(C)}</span></span></div>
 <div class="row" data-tip="change"><span class="key">Change</span><span class="val ${cls(chg)}">${chg>=0?'+':''}${fmt(chg,2)}%</span></div>
 <div class="row" data-tip="fromhigh"><span class="key">% below high</span><span class="val">${pctBelowHigh!=null?fmt(pctBelowHigh,1)+'%':'—'}</span></div>
 <div class="row" data-tip="volume"><span class="key">Vol/AvgVol</span><span class="val">${volRatio!=null?fmt(volRatio,2)+'×':'—'}</span></div>
@@ -339,10 +341,8 @@ function showHoverPanel(time){
   const bbPctB=(bbUV!=null&&bbLV!=null&&(bbUV-bbLV)>0)?((c.close-bbLV)/(bbUV-bbLV)):null;
   document.getElementById('panel-body').innerHTML=`
 <div class="row"><span class="key">Date</span><span class="val">${time}</span></div>
-<div class="row"><span class="key">O</span><span class="val">${fmt(c.open)}</span></div>
-<div class="row"><span class="key">H</span><span class="val">${fmt(c.high)}</span></div>
-<div class="row"><span class="key">L</span><span class="val">${fmt(c.low)}</span></div>
-<div class="row"><span class="key">C</span><span class="val">${fmt(c.close)}</span></div>
+<div class="row2"><span class="cell"><span class="key">O</span><span class="val">${fmt(c.open)}</span></span><span class="cell"><span class="key">H</span><span class="val">${fmt(c.high)}</span></span></div>
+<div class="row2"><span class="cell"><span class="key">L</span><span class="val">${fmt(c.low)}</span></span><span class="cell"><span class="key">C</span><span class="val">${fmt(c.close)}</span></span></div>
 <div class="row" data-tip="change"><span class="key">Change</span><span class="val ${chg!=null?cls(chg):''}">${chg!=null?(chg>=0?'+':'')+fmt(chg,2)+'%':'—'}</span></div>
 <div class="row" data-tip="volume"><span class="key">Vol</span><span class="val">${volV!=null?Math.round(volV).toLocaleString():'—'}</span></div>
 <div class="row" data-tip="atr"><span class="key">ATR</span><span class="val">${fmt(atrV)}</span></div>
@@ -481,10 +481,10 @@ function loadResolution(res){
   kS.setData(d.stochastic.k);
   dS.setData(d.stochastic.d);
   clearSR();
-  if(d.support != null){ srLines.push(candles.createPriceLine({price:d.support,color:'#26a69a',
-    lineWidth:1,lineStyle:2,axisLabelVisible:true,title:'S '+d.support})); }
-  if(d.resistance != null){ srLines.push(candles.createPriceLine({price:d.resistance,color:'#ef5350',
-    lineWidth:1,lineStyle:2,axisLabelVisible:true,title:'R '+d.resistance})); }
+  if(d.support != null){ srLines.push(candles.createPriceLine({price:d.support,color:'#c8ccd4',
+    lineWidth:1,lineStyle:2,axisLabelVisible:true,title:'S'})); }
+  if(d.resistance != null){ srLines.push(candles.createPriceLine({price:d.resistance,color:'#c8ccd4',
+    lineWidth:1,lineStyle:2,axisLabelVisible:true,title:'R'})); }
   visibleCharts().forEach(c => c.timeScale().fitContent());
   positionMasks();
   updateSummaryPanel();
