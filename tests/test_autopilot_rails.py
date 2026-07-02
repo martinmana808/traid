@@ -64,3 +64,9 @@ def test_is_halted_trips_at_minus_25():
     a = apply_fill(new_account(1000.0), "buy", "NVDA", 10, 100.0)  # all-in, cost 1000
     assert is_halted(a, {"NVDA": 74.0}) is True    # -26%
     assert is_halted(a, {"NVDA": 80.0}) is False   # -20%
+
+
+def test_nan_shares_rejected():
+    ok, why = validate_order({"side": "buy", "ticker": "NVDA", "shares": float("nan")},
+                             _acct(), {"NVDA": 100.0}, WL, market_open=True, halted=False)
+    assert not ok and "finite" in why.lower()

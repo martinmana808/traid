@@ -6,6 +6,7 @@ decides whether a trade is *allowed* (beyond physical impossibility).
 """
 import copy
 import json
+import math
 import os
 import sys
 
@@ -41,6 +42,8 @@ def apply_fill(account, side, ticker, shares, price):
     a = copy.deepcopy(account)
     shares = float(shares)
     price = float(price)
+    if not math.isfinite(shares) or not math.isfinite(price):
+        raise ValueError("shares/price must be finite")
     if shares <= 0:
         raise ValueError("shares must be positive")
     pos = _find(a, ticker)

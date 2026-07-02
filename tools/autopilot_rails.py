@@ -4,6 +4,7 @@ validate_order is the ONLY gate between an AI proposal and a real fill.
 Long-only, no leverage, watchlist-only, <=40% per name, market-open, and a
 -25% circuit breaker that blocks new buys.
 """
+import math
 import os
 import sys
 
@@ -34,6 +35,8 @@ def validate_order(order, account, prices, watchlist, market_open, halted):
         shares = float(shares)
     except (TypeError, ValueError):
         return False, "shares not a number"
+    if not math.isfinite(shares):
+        return False, "shares not finite"
     if shares <= 0:
         return False, "shares must be positive"
     price = prices.get(ticker)
@@ -41,8 +44,9 @@ def validate_order(order, account, prices, watchlist, market_open, halted):
         return False, f"no live price for {ticker}"
 
     if side == "sell":
-        if shares > position_shares(account, ticker) + 1e-9:
-            return False, f"cannot sell {shares} {ticker} — hold {position_shares(account, ticker)} (long-only, no shorting)"
+        held = position_shares(account, ticker)
+        if shares > held + 1e-9:
+            return False, f"cannot sell {shares:g} {ticker} — hold {held:g} (long-only, no shorting)"
         return True, "ok"
 
     # side == buy
