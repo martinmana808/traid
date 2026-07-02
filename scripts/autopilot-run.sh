@@ -5,7 +5,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Ensure the runtime dir exists before any redirect (it's gitignored, so absent on fresh checkout).
+mkdir -p data/autopilot
+
 MODEL="$(./.venv/bin/python tools/autopilot.py brain-model)"
+if [ -z "$MODEL" ]; then
+  echo "autopilot-run: could not determine brain model; aborting" >> data/autopilot/run.log
+  exit 1
+fi
 PROMPT="$(cat tools/autopilot_prompt.md)"
 
 # -i prevents idle sleep during the run; claude -p runs headless under the subscription.
