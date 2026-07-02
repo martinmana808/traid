@@ -35,3 +35,12 @@ def test_market_closed_fills_nothing():
     acct, results = execute_orders(orders, new_account(5000.0), PRICES, WL, closed)
     assert results[0]["filled"] is False
     assert acct["cash"] == 5000.0
+
+
+def test_malformed_order_missing_ticker_is_rejected_not_crashing():
+    orders = [{"side": "buy", "shares": 1},                       # no ticker
+              {"side": "buy", "ticker": "NVDA", "shares": 2}]      # valid
+    acct, results = execute_orders(orders, new_account(5000.0), PRICES, WL, OPEN_UTC)
+    assert results[0]["filled"] is False          # malformed one cleanly rejected
+    assert results[1]["filled"] is True           # valid one still fills
+    assert acct["cash"] == 4800.0                 # only the NVDA buy hit cash

@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.autopilot_broker import new_account, load_account, save_account, position_shares, mark_to_market
+from tools.autopilot_broker import new_account, load_account, save_account, position_shares, mark_to_market, apply_fill
 from tools.autopilot_clock import is_market_open, brain_model_for, brain_label
 from tools.autopilot_cache import get_fundamentals
 from tools.autopilot_news import headlines
@@ -116,7 +116,6 @@ def execute_orders(orders, account, prices, watchlist, now_utc):
         ok, reason = validate_order(order, acct, prices, watchlist, market_open, halted)
         price = prices.get(order.get("ticker"))
         if ok:
-            from tools.autopilot_broker import apply_fill
             acct = apply_fill(acct, order["side"], order["ticker"], order["shares"], price)
             halted = is_halted(acct, prices)  # re-check after each fill
         results.append({"order": order, "filled": ok, "reason": reason, "price": price})
@@ -149,7 +148,8 @@ def cmd_execute(orders_json):
     account = _load_or_create_account()
     watchlist = load_watchlist()
     prices = {}
-    for t in set(watchlist) | {o.get("ticker") for o in orders}:
+    candidate_tickers = {t for t in (set(watchlist) | {o.get("ticker") for o in orders}) if isinstance(t, str)}
+    for t in candidate_tickers:
         px = _price_quote(t)
         if px is not None:
             prices[t] = px
