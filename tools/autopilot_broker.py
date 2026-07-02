@@ -4,6 +4,7 @@ The account is a plain dict persisted as JSON. All money rounds to cents.
 Rails live in autopilot_rails.py; this module only mutates state and never
 decides whether a trade is *allowed* (beyond physical impossibility).
 """
+import copy
 import json
 import os
 import sys
@@ -33,11 +34,10 @@ def _find(account, ticker):
 
 def position_shares(account, ticker):
     p = _find(account, ticker)
-    return p["shares"] if p else 0
+    return p["shares"] if p else 0.0
 
 
 def apply_fill(account, side, ticker, shares, price):
-    import copy
     a = copy.deepcopy(account)
     shares = float(shares)
     price = float(price)
@@ -103,6 +103,8 @@ def load_account(path):
 
 
 def save_account(account, path):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    d = os.path.dirname(path)
+    if d:
+        os.makedirs(d, exist_ok=True)
     with open(path, "w") as f:
         json.dump(account, f, indent=2)
