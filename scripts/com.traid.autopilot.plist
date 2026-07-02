@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  TRaid Autopilot — hourly (macOS launchd). Fires every hour; the bot's own
+  market-open guard decides whether a given hour trades or no-ops, so DST and
+  the exact clock never need tuning. Wide window covers US hours from Argentina.
+
+  Install:
+    cp scripts/com.traid.autopilot.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.traid.autopilot.plist
+  Remove:
+    launchctl unload ~/Library/LaunchAgents/com.traid.autopilot.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.traid.autopilot</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/martinmana/Documents/Projects/TRaid/scripts/autopilot-run.sh</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/martinmana/Documents/Projects/TRaid</string>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Minute</key><integer>5</integer></dict>
+  </array>
+  <key>StandardOutPath</key>
+  <string>/Users/martinmana/Documents/Projects/TRaid/data/autopilot/launchd.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/martinmana/Documents/Projects/TRaid/data/autopilot/launchd.log</string>
+</dict>
+</plist>

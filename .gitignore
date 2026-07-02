@@ -16,6 +16,9 @@ data/*.csv
 data/watchdog_state.json
 data/*.log
 
+# Autopilot runtime state (local paper trading — never commit)
+data/autopilot/
+
 # Bank statements — highly sensitive, never commit (public repo)
 bank-statements/
 

@@ -108,6 +108,31 @@ headers so the mapping can be adjusted. Your cash balance and risk setting are p
 ./.venv/bin/pytest -v
 ```
 
+## TRaid Autopilot (paper) — hands-off local experiment
+
+A fully local paper-trading bot: every US-market hour, an AI brain (Fable 5, then
+Opus 4.8) proposes long-only trades on your watchlist within **code-enforced rails**
+(no leverage, ≤40% per name, no shorting, −25% circuit breaker). $5,000 of Monopoly
+money in a JSON file — no broker, no keys, nothing leaves your Mac. **Decision-support,
+not financial advice.**
+
+**Check on it:** open `data/autopilot/status.txt` — balance, ± % and $, positions, moves.
+
+**Run once by hand:**
+```bash
+./scripts/autopilot-run.sh          # one full hourly cycle (needs the `claude` CLI)
+# or step through it:
+./.venv/bin/python tools/autopilot.py prepare
+./.venv/bin/python tools/autopilot.py execute '[]'   # '[]' = hold everything
+```
+
+**Schedule it hourly (macOS):**
+```bash
+cp scripts/com.traid.autopilot.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.traid.autopilot.plist
+```
+Keep your Mac awake during US market hours; `caffeinate` covers the firing minute.
+
 ## Roadmap
 
 - **Phase 1 ✅** conversation-first analyst: live data, portfolio memory, prediction ledger.
