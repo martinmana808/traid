@@ -21,6 +21,8 @@ from tools.autopilot_broker import new_account, load_account, save_account, posi
 from tools.autopilot_clock import is_market_open, brain_model_for, brain_label
 from tools.autopilot_cache import get_fundamentals
 from tools.autopilot_news import headlines
+from tools.autopilot_rails import is_halted, validate_order
+from tools.autopilot_status import render_status
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _DIR = os.path.join(_ROOT, "data", "autopilot")
@@ -97,13 +99,92 @@ def cmd_prepare():
     return build_snapshot(now, watchlist, account, deps)
 
 
+def _fmt_art(now_utc):
+    return now_utc.astimezone(_ART).strftime("%Y-%m-%d %H:%M ART")
+
+
+def _next_run_art(now_utc):
+    return (now_utc + timedelta(hours=1)).astimezone(_ART).strftime("%Y-%m-%d %H:%M ART")
+
+
+def execute_orders(orders, account, prices, watchlist, now_utc):
+    market_open = is_market_open(now_utc)
+    halted = is_halted(account, prices)
+    acct = account
+    results = []
+    for order in orders:
+        ok, reason = validate_order(order, acct, prices, watchlist, market_open, halted)
+        price = prices.get(order.get("ticker"))
+        if ok:
+            from tools.autopilot_broker import apply_fill
+            acct = apply_fill(acct, order["side"], order["ticker"], order["shares"], price)
+            halted = is_halted(acct, prices)  # re-check after each fill
+        results.append({"order": order, "filled": ok, "reason": reason, "price": price})
+    return acct, results
+
+
+def _append_trades(results, now_utc):
+    os.makedirs(_DIR, exist_ok=True)
+    stamp = now_utc.astimezone(_ART).strftime("%H:%M")
+    moves = []
+    with open(TRADES_PATH, "a") as f:
+        for r in results:
+            o = r["order"]
+            rec = {"at": now_utc.isoformat(), "side": o.get("side"), "ticker": o.get("ticker"),
+                   "shares": o.get("shares"), "price": r["price"], "filled": r["filled"],
+                   "reason": r.get("order", {}).get("reason", ""), "rail": r["reason"]}
+            f.write(json.dumps(rec) + "\n")
+            if r["filled"]:
+                why = o.get("reason", "")
+                moves.append(f"{stamp}  {o['side'].upper()} {o['shares']} {o['ticker']} @ ${r['price']:.2f}"
+                             + (f" — {why}" if why else ""))
+    if not any(r["filled"] for r in results):
+        moves.append(f"{stamp}  HOLD everything")
+    return moves
+
+
+def cmd_execute(orders_json):
+    orders = json.loads(orders_json) if isinstance(orders_json, str) else orders_json
+    now = datetime.now(timezone.utc)
+    account = _load_or_create_account()
+    watchlist = load_watchlist()
+    prices = {}
+    for t in set(watchlist) | {o.get("ticker") for o in orders}:
+        px = _price_quote(t)
+        if px is not None:
+            prices[t] = px
+    acct, results = execute_orders(orders, account, prices, watchlist, now)
+    acct["halted"] = is_halted(acct, prices)
+    save_account(acct, ACCOUNT_PATH)
+    moves = _append_trades(results, now)
+    marked = mark_to_market(acct, prices)
+    model = brain_model_for(now.astimezone(_NY).date())
+    status = render_status(marked, brain_label(model), _fmt_art(now), _next_run_art(now),
+                           list(reversed(moves)), halted=acct["halted"])
+    os.makedirs(_DIR, exist_ok=True)
+    with open(STATUS_PATH, "w") as f:
+        f.write(status)
+    return {"filled": sum(1 for r in results if r["filled"]), "results": results}
+
+
+def cmd_brain_model():
+    return brain_model_for(datetime.now(timezone.utc).astimezone(_NY).date())
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="TRaid Autopilot runner")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("prepare")
+    ex = sub.add_parser("execute")
+    ex.add_argument("orders", help="JSON list of orders")
+    sub.add_parser("brain-model")
     args = p.parse_args(argv)
     if args.cmd == "prepare":
         print(json.dumps(cmd_prepare(), indent=2, default=str))
+    elif args.cmd == "execute":
+        print(json.dumps(cmd_execute(args.orders), indent=2, default=str))
+    elif args.cmd == "brain-model":
+        print(cmd_brain_model())
 
 
 if __name__ == "__main__":
