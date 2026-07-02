@@ -34,3 +34,15 @@ def test_snapshot_marks_closed_off_hours():
     after = datetime(2026, 7, 6, 21, 0, tzinfo=timezone.utc)  # 17:00 ET
     snap = build_snapshot(after, ["NVDA"], new_account(5000.0), _deps())
     assert snap["market_open"] is False
+
+
+def test_failed_quote_does_not_zero_out_holding():
+    # Hold 4 NVDA at cost 100; quote fails (price None). Must mark at avg_cost, not $0.
+    acct = apply_fill(new_account(5000.0), "buy", "NVDA", 4, 100.0)
+    deps = _deps()
+    deps["price"] = lambda t: None            # every quote fails
+    snap = build_snapshot(OPEN_UTC, ["NVDA"], acct, deps)
+    nvda = next(p for p in snap["account"]["positions"] if p["ticker"] == "NVDA")
+    assert nvda["price"] == 100.0             # fell back to avg_cost, NOT 0.0
+    assert nvda["pnl_pct"] == 0.0             # not -100%
+    assert snap["tickers"]["NVDA"]["price"] is None   # raw field still reports the failure

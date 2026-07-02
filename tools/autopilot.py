@@ -56,7 +56,8 @@ def build_snapshot(now_utc, watchlist, account, deps):
     tickers = {}
     for t in watchlist:
         price = deps["price"](t)
-        prices[t] = price if price else 0.0
+        if price is not None:
+            prices[t] = price
         tickers[t] = {
             "price": price,
             "position": position_shares(account, t),
