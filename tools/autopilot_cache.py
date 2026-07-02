@@ -19,9 +19,9 @@ def _load(cache_path, today_iso):
     try:
         with open(cache_path) as f:
             data = json.load(f)
-        if data.get("date") == today_iso and isinstance(data.get("tickers"), dict):
+        if isinstance(data, dict) and data.get("date") == today_iso and isinstance(data.get("tickers"), dict):
             return data
-    except (FileNotFoundError, json.JSONDecodeError):
+    except (FileNotFoundError, json.JSONDecodeError, AttributeError, TypeError):
         pass
     return {"date": today_iso, "tickers": {}}
 

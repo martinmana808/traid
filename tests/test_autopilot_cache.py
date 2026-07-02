@@ -38,3 +38,15 @@ def test_new_day_resets_cache(tmp_path):
     assert calls == ["NVDA", "NVDA"]
     saved = json.loads(p.read_text())
     assert saved["date"] == "2026-07-07"
+
+
+def test_corrupt_non_dict_cache_recovers(tmp_path):
+    p = tmp_path / "fund.json"
+    p.write_text("[1, 2, 3]")   # valid JSON, but not an object
+    calls = []
+    def fake(t):
+        calls.append(t)
+        return {"ticker": t, "summary": "ok"}
+    out = get_fundamentals("NVDA", "2026-07-06", str(p), _analyze=fake)
+    assert out["summary"] == "ok"
+    assert calls == ["NVDA"]   # recovered into a fresh cache and fetched
