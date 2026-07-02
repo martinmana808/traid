@@ -109,5 +109,7 @@ def save_account(account, path):
     d = os.path.dirname(path)
     if d:
         os.makedirs(d, exist_ok=True)
-    with open(path, "w") as f:
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
         json.dump(account, f, indent=2)
+    os.replace(tmp, path)

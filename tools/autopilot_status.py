@@ -24,7 +24,7 @@ def render_status(marked, brain_label, updated_str, next_run_str, last_moves, ha
     lines.append(
         f"BALANCE   {_money(marked['total_value'])}    "
         f"{_arrow(marked['pnl_abs'])} {_signed_money(marked['pnl_abs'])}  "
-        f"({'+' if marked['pnl_pct'] >= 0 else ''}{marked['pnl_pct']}%)   since $5,000 start"
+        f"({(marked['pnl_pct'] or 0.0):+.2f}%)   since $5,000 start"
     )
     lines.append(f"CASH      {_money(marked['cash'])}    INVESTED {_money(marked['invested'])}")
     lines.append("")

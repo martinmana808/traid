@@ -8,7 +8,7 @@ Do exactly this, then stop:
 1. Run: `./.venv/bin/python tools/autopilot.py prepare`
    It prints JSON: `market_open`, `brain_label`, the marked `account`, and per-ticker
    `price` / `position` / `technicals` / `fundamentals` / `news`.
-2. If `market_open` is false, STOP — do nothing (the status file is refreshed on execute runs only).
+2. If `market_open` is false, run `./.venv/bin/python tools/autopilot.py execute '[]'` to refresh the status file (this trades nothing — an empty order list just re-marks and rewrites status.txt), then STOP. Do not propose any trades.
 3. Otherwise decide **long-only** orders on watchlist names using the snapshot.
    Weigh fundamentals (PEG/valuation/growth) first, then technicals (RSI/MACD/trend/confluence),
    then news as a light hint. Sizing is yours, but the code enforces: no leverage, <=40% per
