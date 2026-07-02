@@ -15,5 +15,13 @@ if [ -z "$MODEL" ]; then
 fi
 PROMPT="$(cat tools/autopilot_prompt.md)"
 
-# -i prevents idle sleep during the run; claude -p runs headless under the subscription.
-caffeinate -i claude -p --model "$MODEL" "$PROMPT" >> data/autopilot/run.log 2>&1
+# launchd runs with a minimal PATH that won't find `claude`, so resolve it to an
+# absolute path (falls back to the known cmux-bundled location).
+CLAUDE_BIN="$(command -v claude || true)"
+[ -z "$CLAUDE_BIN" ] && CLAUDE_BIN="/Applications/cmux.app/Contents/Resources/bin/claude"
+
+# -i prevents idle sleep during the run. --print runs headless under the subscription;
+# --allowedTools Bash lets the brain run the python autopilot CLI unattended (no other
+# tools are permitted — and the money rails are enforced in Python regardless).
+caffeinate -i "$CLAUDE_BIN" -p --model "$MODEL" --allowedTools "Bash" "$PROMPT" \
+  >> data/autopilot/run.log 2>&1
