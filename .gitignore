@@ -28,3 +28,9 @@ data/contador-briefing.md
 
 # macOS
 .DS_Store
+
+# Generated chart outputs (from the interactive chart tool) — local only
+charts/
+
+# Editor settings
+.vscode/
