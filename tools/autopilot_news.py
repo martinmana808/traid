@@ -13,8 +13,8 @@ def _yf_fetch(ticker):
 
 def _url(content):
     for key in ("canonicalUrl", "clickThroughUrl"):
-        node = content.get(key) or {}
-        if node.get("url"):
+        node = content.get(key)
+        if isinstance(node, dict) and node.get("url"):
             return node["url"]
     return ""
 
@@ -23,15 +23,19 @@ def headlines(ticker, limit=3, _fetch=None):
     fetch = _fetch or _yf_fetch
     try:
         raw = fetch(ticker) or []
+        out = []
+        for item in raw[:limit]:
+            c = item.get("content") if isinstance(item, dict) else None
+            if not isinstance(c, dict):
+                continue
+            provider = c.get("provider")
+            source = provider.get("displayName", "") if isinstance(provider, dict) else ""
+            out.append({
+                "title": c.get("title", ""),
+                "source": source,
+                "published": c.get("pubDate", ""),
+                "url": _url(c),
+            })
+        return out
     except Exception:  # noqa: BLE001 — a bad news feed must not sink the run
         return []
-    out = []
-    for item in raw[:limit]:
-        c = item.get("content", {}) if isinstance(item, dict) else {}
-        out.append({
-            "title": c.get("title", ""),
-            "source": (c.get("provider") or {}).get("displayName", ""),
-            "published": c.get("pubDate", ""),
-            "url": _url(c),
-        })
-    return out

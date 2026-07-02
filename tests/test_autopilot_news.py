@@ -35,3 +35,15 @@ def test_headlines_swallows_errors():
     def boom(_):
         raise RuntimeError("network down")
     assert headlines("NVDA", _fetch=boom) == []
+
+
+def test_headlines_skips_malformed_items_without_raising():
+    bad = [
+        {"content": None},
+        {"content": "not-a-dict"},
+        {"content": {"title": "good", "provider": "not-a-dict", "pubDate": ""}},
+        "totally-bad",
+    ]
+    out = headlines("NVDA", limit=5, _fetch=lambda t: bad)
+    # only the one well-formed-enough item survives; provider degrades to ""
+    assert out == [{"title": "good", "source": "", "published": "", "url": ""}]
