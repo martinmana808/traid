@@ -145,6 +145,21 @@ def find_pivots(highs, lows, window=2):
     return piv
 
 
+def support_resistance(highs, lows, price, window=3):
+    """Nearest pivot-based support/resistance around `price`.
+
+    Restored for the interactive chart (tools/chart_data). Mirrors the inline
+    structure logic in analyze(): nearest swing-high above price = resistance,
+    nearest swing-low below price = support; fall back to period extremes.
+    """
+    piv = find_pivots(highs, lows, window=window)
+    high_piv = [p["price"] for p in piv if p["kind"] == "high"]
+    low_piv = [p["price"] for p in piv if p["kind"] == "low"]
+    resistance = min([h for h in high_piv if h > price], default=round(max(highs), 2))
+    support = max([lo for lo in low_piv if lo < price], default=round(min(lows), 2))
+    return {"support": round(support, 2), "resistance": round(resistance, 2)}
+
+
 _MEANING = {
     "doji": "indecision / potential turning point",
     "hammer": "bullish reversal (buyers rejected lower prices)",
