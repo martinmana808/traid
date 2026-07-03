@@ -102,11 +102,10 @@ const stoch = mk('stoch',140,true);
 
 // Series created once
 // volume FIRST so it renders behind the candles
-const vol  = price.addHistogramSeries({priceScaleId:'',priceFormat:{type:'volume'},color:'#2b3145'});
+const vol  = price.addHistogramSeries({priceScaleId:'',priceFormat:{type:'volume'},color:'#2b3145',priceLineVisible:false,lastValueVisible:false});
 vol.priceScale().applyOptions({scaleMargins:{top:0.82,bottom:0}});
 const candles = price.addCandlestickSeries({upColor:'#26a69a',downColor:'#ef5350',
-  borderVisible:false,wickUpColor:'#26a69a',wickDownColor:'#ef5350',
-  priceLineStyle:3,priceLineColor:'rgba(209,212,220,0.4)'});
+  borderVisible:false,wickUpColor:'#26a69a',wickDownColor:'#ef5350',priceLineStyle:3});
 const bbU = price.addLineSeries({color:'#5b8def',lineWidth:1,priceLineStyle:3,priceLineColor:'rgba(91,141,239,0.4)'});
 const bbM = price.addLineSeries({color:'#9db9ff',lineWidth:1,priceLineStyle:3,priceLineColor:'rgba(157,185,255,0.4)'});
 const bbL = price.addLineSeries({color:'#5b8def',lineWidth:1,priceLineStyle:3,priceLineColor:'rgba(91,141,239,0.4)'});
@@ -489,6 +488,9 @@ function loadResolution(res){
   buildResMaps(res);
   const d = DATA.resolutions[res];
   candles.setData(d.candles);
+  // price line + its axis tag take the colour of the last candle (green=closed up, red=down)
+  const _lc = d.candles.length ? d.candles[d.candles.length-1] : null;
+  if(_lc){ candles.applyOptions({priceLineColor: _lc.close >= _lc.open ? '#26a69a' : '#ef5350'}); }
   bbU.setData(d.bollinger.upper);
   bbM.setData(d.bollinger.middle);
   bbL.setData(d.bollinger.lower);
