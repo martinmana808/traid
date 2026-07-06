@@ -159,11 +159,16 @@ def cmd_execute(orders_json):
     moves = _append_trades(results, now)
     marked = mark_to_market(acct, prices)
     model = brain_model_for(now.astimezone(_NY).date())
-    status = render_status(marked, brain_label(model), _fmt_art(now), _next_run_art(now),
-                           list(reversed(moves)), halted=acct["halted"])
+    block = render_status(marked, brain_label(model), _fmt_art(now), _next_run_art(now),
+                          list(reversed(moves)), halted=acct["halted"])
     os.makedirs(_DIR, exist_ok=True)
+    # Prepend this run's block so status.txt reads newest-first (logbook, not dashboard).
+    existing = ""
+    if os.path.exists(STATUS_PATH):
+        with open(STATUS_PATH) as f:
+            existing = f.read()
     with open(STATUS_PATH, "w") as f:
-        f.write(status)
+        f.write(block + existing)
     return {"filled": sum(1 for r in results if r["filled"]), "results": results}
 
 
