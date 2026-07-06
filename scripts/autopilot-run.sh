@@ -33,9 +33,16 @@ fi
 PROMPT="$(cat tools/autopilot_prompt.md)"
 
 # launchd runs with a minimal PATH that won't find `claude`, so resolve to an absolute
-# path (falls back to the known cmux-bundled location).
+# path: try PATH first, then known install locations.
 CLAUDE_BIN="$(command -v claude || true)"
-[ -z "$CLAUDE_BIN" ] && CLAUDE_BIN="/Applications/cmux.app/Contents/Resources/bin/claude"
+for _c in "$HOME/.local/bin/claude" "/opt/homebrew/bin/claude" "/usr/local/bin/claude" \
+          "/Applications/cmux.app/Contents/Resources/bin/claude"; do
+  [ -z "$CLAUDE_BIN" ] && [ -x "$_c" ] && CLAUDE_BIN="$_c"
+done
+if [ -z "$CLAUDE_BIN" ] || [ ! -x "$CLAUDE_BIN" ]; then
+  log "ERROR: could not locate the 'claude' CLI; aborting"
+  exit 1
+fi
 
 log "market OPEN — brain=$MODEL — invoking headless session"
 

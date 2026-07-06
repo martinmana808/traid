@@ -29,10 +29,11 @@
   <string>com.traid.autopilot</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/martinmana/Documents/Projects/TRaid/scripts/autopilot-run.sh</string>
+    <string>/bin/bash</string>
+    <string>/Users/martinmana/Projects/TRaid/scripts/autopilot-run.sh</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/martinmana/Documents/Projects/TRaid</string>
+  <string>/Users/martinmana/Projects/TRaid</string>
   <key>StartCalendarInterval</key>
   <array>
     <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>11</integer><key>Minute</key><integer>0</integer></dict>
@@ -72,8 +73,8 @@
     <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>17</integer><key>Minute</key><integer>0</integer></dict>
   </array>
   <key>StandardOutPath</key>
-  <string>/Users/martinmana/Documents/Projects/TRaid/data/autopilot/launchd.log</string>
+  <string>/Users/martinmana/Projects/TRaid/data/autopilot/launchd.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/martinmana/Documents/Projects/TRaid/data/autopilot/launchd.log</string>
+  <string>/Users/martinmana/Projects/TRaid/data/autopilot/launchd.log</string>
 </dict>
 </plist>

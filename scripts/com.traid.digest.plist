@@ -21,12 +21,12 @@
   <string>com.traid.digest</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/martinmana/Documents/Projects/TRaid/.venv/bin/python</string>
-    <string>/Users/martinmana/Documents/Projects/TRaid/tools/watchdog.py</string>
+    <string>/Users/martinmana/Projects/TRaid/.venv/bin/python</string>
+    <string>/Users/martinmana/Projects/TRaid/tools/watchdog.py</string>
     <string>--digest</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/martinmana/Documents/Projects/TRaid</string>
+  <string>/Users/martinmana/Projects/TRaid</string>
   <key>StartCalendarInterval</key>
   <array>
     <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
@@ -36,8 +36,8 @@
     <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
   </array>
   <key>StandardOutPath</key>
-  <string>/Users/martinmana/Documents/Projects/TRaid/data/digest.log</string>
+  <string>/Users/martinmana/Projects/TRaid/data/digest.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/martinmana/Documents/Projects/TRaid/data/digest.log</string>
+  <string>/Users/martinmana/Projects/TRaid/data/digest.log</string>
 </dict>
 </plist>
